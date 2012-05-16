@@ -1,0 +1,82 @@
+TODO: (urgent -> not sure)
+
+UI
+***
+Add animation.
+Make buttons disappear after a short time.
+Add nextFix/prevFix button.
+Auto scale map.
+Add other Google Map modes.
+Show indecisive progress bar while drawing.
+
+Add todayButton?
+Set startDate and endDate? If (endDate == startDate), show one day's fixes.
+Add widget?
+
+Logic
+***
+Add GPS/WiFi timeout.
+Check if GPS/WiFi locations are consistent with tower location.
+Design logic to choose the most accurate location available.
+
+Functionalities
+***
+Add data encryption and backup (via Email or Cloud).
+Set accuracy threshold for both sampling and storing (for privacy issues).
+
+Link photos to fixes?
+
+Code
+***
+Move strings to strings.xml.
+Re-factor when possible.
+Add more comments.
+Change calendar to UTC?
+
+
+--------------------------------------
+Done: (recent -> old)
+
+UI
+***
+Show number of fixes drawn.
+Add ItemizedOverlay.
+Keep the Overlay being drawn multiple times when animating to the first fix.
+Add "previous day", "next day", "all days" buttons to map.
+Add "green are more recent than red." explanation.
+Center the map after pressing the buttons, not at drawing.
+Draw path only if location changes significantly.
+Add landscape progress bar.
+Show progress bar or Toast for some operations.
+Separate portrait/landscape layout.
+Remove GPS checkBox and historyView.
+Add about page.
+
+Logic
+***
+When available, GPS locations are recorded independently from WiFi/tower locations.
+When WiFi is available, set to a smaller accuracy threshold than tower's.
+
+Functionalities
+***
+Make fixes deletable from the map.
+Ignore reading size error or fix error upon import.
+More robust import. Check out-of-bounds fixes.
+Import/export to a local file.
+User can define sampling frequency.
+Start at boot.
+
+Code
+***
+
+
+--------------------------------------
+For Deployment:
+
+AndroidManifest.xml
+android:debuggable="false"
+
+MapView in map.xml
+Change android:apiKey to production key.
+
+Remove logging.
