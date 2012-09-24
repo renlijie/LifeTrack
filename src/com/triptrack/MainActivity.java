@@ -31,7 +31,7 @@ import android.widget.ToggleButton;
 /**
  * Activity the user sees when opening the app.
  * @author Lijie Ren
- * 
+ *
  */
 public final class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
@@ -51,7 +51,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+
         // Check display's orientation and draw the activity accordingly.
         final Display display =
             ((WindowManager) getSystemService(WINDOW_SERVICE))
@@ -104,7 +104,7 @@ public final class MainActivity extends Activity {
                 final int intervalMins =
                     settings.getInt(Constants.INTERVAL_MINS,
                         Constants.DEFAULT_INTERVAL_MINS);
-                
+
                 // Set an EditText view for setting the interval.
                 final EditText setIntervalET = new EditText(MainActivity.this);
                 setIntervalET.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -228,7 +228,7 @@ public final class MainActivity extends Activity {
                         public void onClick(DialogInterface dialog, int id) {
                             progressBar.setMessage(MainActivity.this.getString(
                                 R.string.import_in_progress));
-                            // Create a thread for importing, which may take a 
+                            // Create a thread for importing, which may take a
                             // long time.
                             new Thread(new Runnable() {
                                 public void run() {
@@ -249,7 +249,7 @@ public final class MainActivity extends Activity {
                     new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int id) {
-                            Toast.makeText(MainActivity.this, 
+                            Toast.makeText(MainActivity.this,
                                 MainActivity.this
                                     .getString(R.string.import_canceled),
                                 Toast.LENGTH_SHORT).show();
@@ -278,31 +278,30 @@ public final class MainActivity extends Activity {
                         calendar.setTimeInMillis(c.getLong((c
                             .getColumnIndex(Constants.KEY_UTC))));
 
-                        res.append( 
+                        res.append(
                             /*
                             calendar.get(Calendar.YEAR) + "/" +
                             */
-                                String.format("%02d", (calendar.get(Calendar.MONTH) + 1))
-                                + "/" + String.format("%02d", calendar.get(Calendar.DATE))
-                                + ", "
-                                + String.format("%02d", calendar.get(Calendar.HOUR_OF_DAY))
-                                + ":"
-                                + String.format("%02d", calendar.get(Calendar.MINUTE))
-                                + ":"
-                                + String.format("%02d", calendar.get(Calendar.SECOND))
-                                /*
-                                + "\n"
-                                + "        ("
-                                + format.format(c.getDouble(c
-                                    .getColumnIndex(Constants.KEY_LAT)))
-                                    + ", "
-                                    + format.format(c.getDouble(c
-                                        .getColumnIndex(Constants.KEY_LNG)))
-                                        + "), "
-                                 */
-                                 + ", "
-                                 + c.getFloat(c
-                                     .getColumnIndex(Constants.KEY_ACC)) + "M\n");
+                            String.format("%02d", (calendar.get(Calendar.MONTH) + 1))
+                            + "/" + String.format("%02d", calendar.get(Calendar.DATE))
+                            + ", "
+                            + String.format("%02d", calendar.get(Calendar.HOUR_OF_DAY))
+                            + ":"
+                            + String.format("%02d", calendar.get(Calendar.MINUTE))
+                            + ":"
+                            + String.format("%02d", calendar.get(Calendar.SECOND))
+                            /*
+                            + "\n"
+                            + "        ("
+                            + format.format(c.getDouble(c
+                                .getColumnIndex(Constants.KEY_LAT)))
+                            + ", "
+                            + format.format(c.getDouble(c
+                                .getColumnIndex(Constants.KEY_LNG)))
+                            + "), "
+                            */
+                            + ", "
+                            + c.getFloat(c.getColumnIndex(Constants.KEY_ACC)) + "M\n");
 
                         if (c.isLast()) {
                             c.close();
@@ -313,7 +312,7 @@ public final class MainActivity extends Activity {
                     history = res.toString();
                 }
                 fixDataStore.close();
-            
+
                 // File to write.
                 final File file =
                     new File(getExternalFilesDir(null), Constants.HISTORY_FILE);
@@ -353,7 +352,7 @@ public final class MainActivity extends Activity {
                     public void onClick(DialogInterface dialog, int id) {
                         Toast.makeText(MainActivity.this,
                             MainActivity.this.getString(
-                                R.string.export_canceled), 
+                                R.string.export_canceled),
                             Toast.LENGTH_SHORT).show();
                         dialog.cancel();
                     }

@@ -24,13 +24,13 @@ import com.google.android.maps.Projection;
 
 class FixOverlay extends ItemizedOverlay<OverlayItem> {
     private static final String TAG = "FixOverlay";
-    
+
     private final Cursor c;
 
     private ArrayList<Element> points = new ArrayList<Element>();
     private Context context;
     private HistoryMapActivity map;
-    
+
     class Element extends OverlayItem{
     public
         long utc;
@@ -38,7 +38,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
         double lng;
         float acc;
         int green;
-        
+
         Element(long utc, double lat, double lng, float acc, int green) {
             super(new GeoPoint((int)(lat * 1E6), (int)(lng * 1E6)), "", "");
             this.utc = utc;
@@ -48,34 +48,34 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
             this.green = green;
         }
     }
-    
-    public FixOverlay(Context context, Cursor rows, Calendar calendar, 
+
+    public FixOverlay(Context context, Cursor rows, Calendar calendar,
         HistoryMapActivity map) {
         super(boundCenterBottom(context.getResources().getDrawable(R.drawable.marker)));
         this.context = context;
         this.map = map;
         c = rows;
-        
+
         if (!c.moveToLast()) {
             populate();
             return;
         }
-        
+
         int size = c.getCount();
-        
+
         int index = 0;
         int green;
         double colorPosition;
         double preLat = 0, preLng = 0;
         float[] results = new float[1];
         boolean firstPoint = true;
-        
+
         while (true) {
             double lat = c.getDouble(c.getColumnIndex(Constants.KEY_LAT));
             double lng = c.getDouble(c.getColumnIndex(Constants.KEY_LNG));
             float acc = c.getFloat(c.getColumnIndex(Constants.KEY_ACC));
             long utc = c.getLong(c.getColumnIndex(Constants.KEY_UTC));
-            
+
             if (firstPoint) {
                 firstPoint = false;
             } else {
@@ -99,7 +99,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
             } else {
                 // timeColor
                 colorPosition =
-                    (double) (utc - calendar.getTimeInMillis()) 
+                    (double) (utc - calendar.getTimeInMillis())
                     / (24L * 3600 * 1000);
             }
 
@@ -117,12 +117,12 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
     public void close() {
         c.close();
     }
-    
+
     @Override
     public int size() {
         return points.size();
     }
-    
+
     @Override
     public void draw(Canvas canvas, MapView mapv, boolean shadow) {
         if (shadow) {
@@ -134,7 +134,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
         if (points == null) {
             return;
         }
-         
+
         Path path = new Path();
         boolean firstPoint = true;
         Paint mPaint = new Paint();
@@ -156,8 +156,8 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
             } else {
                 path.lineTo(pFix.x, pFix.y);
             }
-            
-            int rad = (int) (projection.metersToEquatorPixels(point.acc) * 
+
+            int rad = (int) (projection.metersToEquatorPixels(point.acc) *
                 (1 / Math.cos(Math.toRadians(point.lat))));
 
             mPaint.setARGB(128, 255 - point.green, point.green, 0);
@@ -168,59 +168,80 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
 
         mPaint.setARGB(128, 0, 0, 255);
         // mPaint.setARGB(128, 128, 128, 128);
-        canvas.drawPath(path, mPaint); 
+        canvas.drawPath(path, mPaint);
     }
 
     @Override
     protected OverlayItem createItem(int i) {
         return (OverlayItem) points.get(i);
     }
-    
+
     @Override
     protected boolean onTap(int index) {
-       final Element item = (Element) points.get(index);
-       Calendar c = new GregorianCalendar();
-       c.setTimeInMillis(item.utc);
-       new AlertDialog.Builder(context).
-       setTitle(HistoryMapActivity.printDate(c) + " " + 
-           String.format("%02d", c.get(Calendar.HOUR_OF_DAY)) + ":" + 
-           String.format("%02d", c.get(Calendar.MINUTE)) + ":" + 
-           String.format("%02d", c.get(Calendar.SECOND))).
-       setMessage("(Latitude, Longitude), Accuracy\n(" + String.format("%1$,.5f", item.lat)
-           + ", " + String.format("%1$,.5f", item.lng) + 
-           "), " + String.format("%1$,.3f", item.acc)).
-       setPositiveButton("delete",
-           new DialogInterface.OnClickListener() {
-               @Override
-               public void onClick(DialogInterface dialog, int id) {
-                   new AlertDialog.Builder(context).
-                   setTitle("Confirm").setMessage("DELETE?").
-                   setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        FixDataStore fixDataStore = new FixDataStore(context);
-                        fixDataStore.open();
-                        fixDataStore.delete(item.utc);
-                        fixDataStore.close();
-                        map.prepareRows(0, false, false);
-                        Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
-                    }
-                }).setNegativeButton("No", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                }).show();
-               }
-           })
-       .setNegativeButton("back",
-           new DialogInterface.OnClickListener() {
-           @Override
-           public void onClick(DialogInterface dialog, int id) {
-               dialog.cancel();
-           }
-       }).
-       show();
-       return true;
+        final Element item = (Element) points.get(index);
+        Calendar c = new GregorianCalendar();
+        c.setTimeInMillis(item.utc);
+        new AlertDialog.Builder(context).
+        setTitle(HistoryMapActivity.printDate(c) + " " +
+            String.format("%02d", c.get(Calendar.HOUR_OF_DAY)) + ":" +
+            String.format("%02d", c.get(Calendar.MINUTE)) + ":" +
+            String.format("%02d", c.get(Calendar.SECOND))).
+        setMessage("(Latitude, Longitude), Accuracy\n(" + String.format("%1$,.5f", item.lat)
+            + ", " + String.format("%1$,.5f", item.lng) +
+            "), " + String.format("%1$,.3f", item.acc)).
+        setPositiveButton("delete",
+            new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int id) {
+                    new AlertDialog.Builder(context).
+                    setTitle("Confirm").setMessage("DELETE?").
+                    setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int id) {
+                            new AlertDialog.Builder(context).
+                            setTitle("CONFIRM").setMessage("Choose one").
+                            setPositiveButton("Delete this fix", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    FixDataStore fixDataStore = new FixDataStore(context);
+                                    fixDataStore.open();
+                                    fixDataStore.delete(item.utc);
+                                    fixDataStore.close();
+                                    map.prepareRows(0, false, false);
+                                    Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
+                                }
+                            }).
+                            setNegativeButton("DELETE THIS DAY", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    FixDataStore fixDataStore = new FixDataStore(context);
+                                    fixDataStore.open();
+                                    fixDataStore.deleteDay(item.utc);
+                                    fixDataStore.close();
+                                    map.prepareRows(0, false, false);
+                                    Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
+                                }
+                            }).
+                            show();
+                        }
+                    }).
+                    setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    }).
+                    show();
+                }
+            }).
+        setNegativeButton("back",
+            new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+            }
+        }).
+        show();
+        return true;
     }
 }

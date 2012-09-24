@@ -21,13 +21,13 @@ import android.util.Log;
 
 public class FixDataStore {
     private static final String TAG = "FixDataStore";
-    
+
     private static final String DATABASE_NAME = "triptrack";
     private static final String DATABASE_TABLE = "fixes";
     private static final int DATABASE_VERSION = 4;
 
     private final Context mCtx;
-    
+
     private DatabaseHelper mDbHelper;
     private SQLiteDatabase mDb;
 
@@ -101,7 +101,7 @@ public class FixDataStore {
                 mHandler.sendMessage(Message.obtain(mHandler,
                     Constants.HANDLER_TOAST, 0, 0, "Opening " + file +
                         " failed. Do you have access?"));
-                Log.w(Constants.TAG + ":" + TAG, "Opening " + file + 
+                Log.w(Constants.TAG + ":" + TAG, "Opening " + file +
                     " failed.");
                 return;
             }
@@ -150,13 +150,13 @@ public class FixDataStore {
                 mHandler.sendMessage(Message.obtain(mHandler,
                     Constants.HANDLER_TOAST, 0, 0, "Closing " + file +
                         " failed."));
-                Log.w(Constants.TAG + ":" + TAG, "Closing " + file + 
+                Log.w(Constants.TAG + ":" + TAG, "Closing " + file +
                     " failed.");
             }
             mHandler.sendMessage(Message.obtain(mHandler,
-                Constants.HANDLER_TOAST, 0, 0, 
+                Constants.HANDLER_TOAST, 0, 0,
                     mCtx.getString(R.string.export_finished)));
-            Log.d(Constants.TAG + ":" + TAG, 
+            Log.d(Constants.TAG + ":" + TAG,
                 mCtx.getString(R.string.export_finished));
         } else {
             mHandler.sendMessage(Message.obtain(mHandler,
@@ -169,7 +169,7 @@ public class FixDataStore {
     public void importFromFile(File file, Handler mHandler) {
         // A flag to show if any error happened during importing.
         boolean noError = true;
-        
+
         // Open a reader.
         FileInputStream fis;
         try {
@@ -183,7 +183,7 @@ public class FixDataStore {
         }
         BufferedReader br = new BufferedReader(new InputStreamReader(
             new DataInputStream(fis)));
-        
+
         // Read the first line as the total number of fixes.
         String str;
         int size;
@@ -208,16 +208,16 @@ public class FixDataStore {
                 mHandler.sendMessage(Message.obtain(mHandler,
                     Constants.HANDLER_TOAST, 0, 0, "Opening " + file +
                         " failed. Does it exist?"));
-                Log.w(Constants.TAG + ":" + TAG, "Opening " + file + 
+                Log.w(Constants.TAG + ":" + TAG, "Opening " + file +
                     " failed.");
                 return;
             }
             br = new BufferedReader(new InputStreamReader(new DataInputStream(
                     fis)));
-            
+
             // Assign a fake size.
             size = Integer.MAX_VALUE;
-            
+
             // Notify the user and set the flag. Continue.
             mHandler.sendMessage(Message.obtain(mHandler,
                 Constants.HANDLER_TOAST, 0, 0,
@@ -236,13 +236,13 @@ public class FixDataStore {
         long utc;
         double lat, lng;
         float acc;
-        
+
         // The number of fix currently being imported.
         size = 0;
-        
+
         while (true) {
             size++;
-            
+
             // Read the current line. Should contain a fix.
             try {
                 str = br.readLine();
@@ -250,14 +250,14 @@ public class FixDataStore {
                 mHandler.sendMessage(Message.obtain(mHandler,
                     Constants.HANDLER_TOAST, 0, 0, "Reading " + file +
                         " failed."));
-                Log.w(Constants.TAG + ":" + TAG, "Reading " + file + 
+                Log.w(Constants.TAG + ":" + TAG, "Reading " + file +
                     " failed.");
                 return;
             }
             if (str == null) {
                 break;
             }
-            
+
             // Parse the string as a fix.
             String[] entry = str.split(",");
             if (entry.length < 4) {
@@ -265,7 +265,7 @@ public class FixDataStore {
                 noError = false;
                 continue;
             }
-            
+
             // Validate the data.
             try {
                 utc = Long.parseLong(entry[0]);
@@ -274,44 +274,44 @@ public class FixDataStore {
                 acc = Float.parseFloat(entry[3]);
             } catch (NumberFormatException e) {
                 noError = false;
-                Log.w(Constants.TAG + ":" + TAG, "Reading fix #" + size + 
+                Log.w(Constants.TAG + ":" + TAG, "Reading fix #" + size +
                     " failed.");
                 continue;
             }
-            if (utc < 0 || lat < -90 || lat > 90 || lng > 180 || lng < -180 || 
+            if (utc < 0 || lat < -90 || lat > 90 || lng > 180 || lng < -180 ||
                 acc < 0) {
                 noError = false;
-                Log.w(Constants.TAG + ":" + TAG, "Not valid: fix #" + size + 
+                Log.w(Constants.TAG + ":" + TAG, "Not valid: fix #" + size +
                     ".");
                 continue;
             }
-            
-            // Add to database. If the fix is already in the database, an 
+
+            // Add to database. If the fix is already in the database, an
             // SQLException will occur. Catch it.
             try {
                 createFix(utc, lat, lng, acc);
                 mHandler.sendMessage(Message.obtain(mHandler,
-                    Constants.HANDLER_PROGRESSBAR_SETPROGRESS, size, 0, 
+                    Constants.HANDLER_PROGRESSBAR_SETPROGRESS, size, 0,
                     null));
             } catch (SQLException e) {
                 noError = false;
-                Log.w(Constants.TAG + ":" + TAG, "SQLException at fix #" + size 
-                    +".");            
+                Log.w(Constants.TAG + ":" + TAG, "SQLException at fix #" + size
+                    +".");
             }
         }
 
         // Notify the user if error has occurred during the process.
         if (noError) {
-            mHandler.sendMessage(Message.obtain(mHandler, 
-                Constants.HANDLER_TOAST, 0, 0, 
+            mHandler.sendMessage(Message.obtain(mHandler,
+                Constants.HANDLER_TOAST, 0, 0,
                 mCtx.getString(R.string.import_finished)));
-            Log.d(Constants.TAG + ":" + TAG, 
+            Log.d(Constants.TAG + ":" + TAG,
                 mCtx.getString(R.string.import_finished));
         } else {
-            mHandler.sendMessage(Message.obtain(mHandler, 
-                Constants.HANDLER_TOAST, 0, 0, 
+            mHandler.sendMessage(Message.obtain(mHandler,
+                Constants.HANDLER_TOAST, 0, 0,
                 mCtx.getString(R.string.import_finished_with_error)));
-            Log.d(Constants.TAG + ":" + TAG, 
+            Log.d(Constants.TAG + ":" + TAG,
                 mCtx.getString(R.string.import_finished_with_error));
         }
 
@@ -328,10 +328,26 @@ public class FixDataStore {
     public void clearHistory() {
         mDb.execSQL("DELETE FROM " + DATABASE_TABLE);
     }
-    
+
     public void delete(long utc) {
-        mDb.delete(DATABASE_TABLE, 
+        mDb.delete(DATABASE_TABLE,
             Constants.KEY_UTC + "=" + Long.toString(utc), null);
+    }
+
+    public void deleteDay(long utc) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(utc);
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        Cursor c = fetchFixes(cal);
+        c.moveToFirst();
+        do {
+            delete(c.getLong(c.getColumnIndex(Constants.KEY_UTC)));
+        } while (c.moveToNext());
+        c.close();
     }
 
     // TODO: encrypt
@@ -345,7 +361,7 @@ public class FixDataStore {
     }
 
     /**
-     * 
+     *
      * @param time
      * @param latitude
      * @param longitude
