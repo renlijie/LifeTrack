@@ -3,13 +3,13 @@
     xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
-	
+
     <com.google.android.maps.MapView
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/mapview"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:apiKey="0-VpvGDqGmzCqIGzr06Y1eIJh5a6zPmPw5lx6tA"
+        android:apiKey="0-VpvGDqGmzDKJRHbDB6TPvtRPJ5A8GNWBccH7A"
         android:clickable="true" />
 
     <Button
