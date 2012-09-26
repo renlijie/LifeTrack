@@ -1,6 +1,7 @@
 package com.triptrack;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
@@ -31,7 +32,16 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
     private Context context;
     private HistoryMapActivity map;
 
-    class Element extends OverlayItem{
+    private double maxLat = -90;
+    private double minLat = 90;
+    private double cenLat = 0;
+    private double latSpan = 0;
+    private double rightLng = 0;
+    private double leftLng = 0;
+    private double cenLng = 0;
+    private double lngSpan = 0;
+
+    class Element extends OverlayItem {
     public
         long utc;
         double lat;
@@ -61,6 +71,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
             return;
         }
 
+        ArrayList<Double> lngList = new ArrayList<Double>();
         int size = c.getCount();
 
         int index = 0;
@@ -93,6 +104,11 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
             preLat = lat;
             preLng = lng;
 
+            if (lat > maxLat)
+                maxLat = lat;
+            if (lat < minLat)
+                minLat = lat;
+
             if (calendar == null) {
                 // sizeColor
                 colorPosition = (double) index++ / size;
@@ -105,12 +121,45 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
 
             green = (int) (255 * colorPosition);
             points.add(new Element(utc, lat, lng, acc, green));
+            lngList.add(lng);
 
             if (c.isFirst()) {
                 break;
             }
             c.moveToPrevious();
         }
+
+        Double [] lngs = lngList.toArray(new Double[lngList.size()]);
+        Arrays.sort(lngs);
+
+        int idx = 0;
+        double diff = lngs[lngs.length - 1] - lngs[0];
+        if (diff > 180)
+            diff = 360 - diff;
+        for (int i = 1; i < lngs.length; i++) {
+            double d = lngs[i] - lngs[i-1];
+            if (d > 180)
+                d  = 360 - d;
+            if (diff < d) {
+                diff = d;
+                idx = i;
+            }
+        }
+        leftLng = lngs[idx];
+        if (idx == 0) {
+            rightLng = lngs[lngs.length - 1];
+            cenLng = (rightLng + leftLng) / 2;
+            lngSpan = rightLng - leftLng;
+        }
+        else {
+            rightLng = lngs[idx - 1];
+            cenLng = (leftLng + rightLng) / 2 - 180;
+            lngSpan = (rightLng + 180) + (180 - leftLng);
+        }
+
+        cenLat = (minLat + maxLat) / 2;
+        latSpan = maxLat - minLat;
+
         populate();
     }
 
@@ -121,6 +170,22 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
     @Override
     public int size() {
         return points.size();
+    }
+
+    public double getLatSpan() {
+        return latSpan;
+    }
+
+    public double getLngSpan() {
+        return lngSpan;
+    }
+
+    public double getCenLng() {
+        return cenLng;
+    }
+
+    public double getCenLat() {
+        return cenLat;
     }
 
     @Override

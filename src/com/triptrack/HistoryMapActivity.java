@@ -34,7 +34,7 @@ public class HistoryMapActivity extends MapActivity {
     protected boolean isRouteDisplayed() {
         return false;
     }
-    
+
     static String printDate(Calendar calendar) {
         if (calendar == null) {
             return "ALL DAYS";
@@ -46,7 +46,7 @@ public class HistoryMapActivity extends MapActivity {
             strDays[calendar.get(Calendar.DAY_OF_WEEK) - 1];
     }
 
-    void prepareRows(int direction, final boolean firstTime, boolean move) {        
+    void prepareRows(int direction, final boolean firstTime, boolean move) {
         FixDataStore fixDataStore = new FixDataStore(this);
         fixDataStore.open();
 
@@ -63,14 +63,14 @@ public class HistoryMapActivity extends MapActivity {
                 calendar = cal;
             }
         }
-        
+
         Cursor c;
         if (allDays) {
             c = fixDataStore.fetchFixes(null);
         } else {
-            c = fixDataStore.fetchFixes(calendar);   
+            c = fixDataStore.fetchFixes(calendar);
         }
-        
+
 
         if (!firstTime) {
             FixOverlay fixOverlay =
@@ -88,7 +88,7 @@ public class HistoryMapActivity extends MapActivity {
             f = new FixOverlay(this, c, calendar, this);
             mapOverlays.add(f);
         }
-        
+
         if (allDays) {
             dateView.setText(" " + printDate(null) + ", " + c.getCount() +
                 " fixes. \n " + f.size() + " fixes drawn. \n " + "Older   fixes:    red. \n Newer fixes:    green. ");
@@ -97,7 +97,7 @@ public class HistoryMapActivity extends MapActivity {
                 " fixes. \n " + f.size() + " fixes drawn. \n " + "0am -> 12pm:    red. \n 12pm -> 0am:    green. ");
         }
         fixDataStore.close();
-        
+
         if(move) {
             double lat, lng;
             if (c.moveToFirst()) {
@@ -114,12 +114,17 @@ public class HistoryMapActivity extends MapActivity {
                     lng = lastKnownLocation.getLongitude();
                 }
             }
+            double latSpanE6 = f.getLatSpan() * 1E6;
+            double lngSpanE6 = f.getLngSpan() * 1E6;
+            double cenLatE6 = f.getCenLat() * 1E6;
+            double cenLngE6 = f.getCenLng() * 1E6;
+            mapView.getController().zoomToSpan((int)(latSpanE6 * 1.5), (int)(lngSpanE6 * 1.1));
             GeoPoint gFix =
-                new GeoPoint((int) (lat * 1E6), (int) (lng * 1E6));
+                new GeoPoint((int)(cenLatE6), (int)(cenLngE6));
             mapView.getController().animateTo(gFix);
         }
     }
-    
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
