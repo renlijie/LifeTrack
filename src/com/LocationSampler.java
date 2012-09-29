@@ -13,20 +13,26 @@ import android.util.Log;
 
 public class LocationSampler extends BroadcastReceiver {
   private static final String TAG = "LocationSampler";
+  private Context context;
 
-  void writeToDb(Context context, Location location) {
+  void writeToDb(Location location) {
     FixDataStore fixDataStore = new FixDataStore(context);
     fixDataStore.open();
     fixDataStore.createFix(location);
     fixDataStore.close();
   }
 
+  public void setLocation(Location location) {}
+
   @Override
   public void onReceive(final Context context, Intent intent) {
+    this.context = context;
+
     final LocationManager locationManager =
       (LocationManager) context
       .getSystemService(Context.LOCATION_SERVICE);
 
+/*
     final LocationListener cellLocationListener = new LocationListener() {
       @Override
       public void onLocationChanged(Location location) {
@@ -113,6 +119,13 @@ public class LocationSampler extends BroadcastReceiver {
       @Override
       public void onProviderDisabled(String provider) {}
     };
+*/
+    GpsLocationListener gpsLocationListener =
+      new GpsLocationListener(this, locationManager);
+    WifiLocationListener wifiLocationListener =
+      new WifiLocationListener(this, locationManager);
+    CellLocationListener cellLocationListener =
+      new CellLocationListener(this, locationManager);
 
     try{
       if(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
