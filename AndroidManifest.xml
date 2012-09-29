@@ -43,7 +43,7 @@
         -->
 
         <receiver
-            android:name="com.triptrack.RepeatingAlarm"
+            android:name="com.triptrack.LocationSampler"
             android:process=":remote" />
 
         <receiver android:name="com.triptrack.AlarmController" >

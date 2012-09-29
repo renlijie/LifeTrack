@@ -39,7 +39,7 @@ public class AlarmController extends BroadcastReceiver {
    * Start broadcasting alarms periodically. Notify the user about this.
    */
   static public void startAlarm(Context context, int intervalMins) {
-    Intent intent = new Intent(context, RepeatingAlarm.class);
+    Intent intent = new Intent(context, LocationSampler.class);
     PendingIntent sender = PendingIntent.getBroadcast(context, 0, intent, 0);
 
     AlarmManager alarmManager = (AlarmManager) context
@@ -56,7 +56,7 @@ public class AlarmController extends BroadcastReceiver {
    * Stop the repeating alarm and notify the user about this.
    */
   static public void stopAlarm(Context context) {
-    Intent intent = new Intent(context, RepeatingAlarm.class);
+    Intent intent = new Intent(context, LocationSampler.class);
     PendingIntent sender = PendingIntent.getBroadcast(context, 0, intent, 0);
 
     AlarmManager alarmManager = (AlarmManager) context
