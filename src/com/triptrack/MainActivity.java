@@ -416,7 +416,7 @@ public final class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 new AlertDialog.Builder(MainActivity.this)
-                .setMessage(Constants.USAGE).setCancelable(true)
+                .setMessage(Constants.ABOUT).setCancelable(true)
                 .setPositiveButton("OK",
                     new DialogInterface.OnClickListener() {
                     @Override

@@ -18,15 +18,15 @@ public class RepeatingAlarm extends BroadcastReceiver {
         FixDataStore fixDataStore = new FixDataStore(context);
         fixDataStore.open();
         fixDataStore.createFix(location);
-        fixDataStore.close();       
+        fixDataStore.close();
     }
-    
+
     @Override
     public void onReceive(final Context context, Intent intent) {
         final LocationManager locationManager =
             (LocationManager) context
                 .getSystemService(Context.LOCATION_SERVICE);
-        
+
         final LocationListener cellLocationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
@@ -75,7 +75,7 @@ public class RepeatingAlarm extends BroadcastReceiver {
                     Log.d(Constants.TAG + ":" + TAG, "WIFI ACC too low");
                     return;
                 }
-                
+
                 locationManager.removeUpdates(this);
                 write(context, location);
             }
@@ -90,7 +90,7 @@ public class RepeatingAlarm extends BroadcastReceiver {
             @Override
             public void onProviderDisabled(String provider) {}
         };
-        
+
         final LocationListener gpsLocationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
@@ -98,7 +98,7 @@ public class RepeatingAlarm extends BroadcastReceiver {
                     Log.w(Constants.TAG + ":" + TAG, "location is null!");
                     return;
                 }
-                locationManager.removeUpdates(this);                
+                locationManager.removeUpdates(this);
                 Log.d(Constants.TAG + ":" + TAG, "GPS location " + location.getAccuracy());
                 write(context, location);
             }
@@ -113,19 +113,19 @@ public class RepeatingAlarm extends BroadcastReceiver {
             @Override
             public void onProviderDisabled(String provider) {}
         };
-        
+
         try{
             if(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER, Constants.MIN_TIME_MILLIS,
-                    Constants.MIN_DISTANCE_METERS, gpsLocationListener);
+                    LocationManager.GPS_PROVIDER, 0,
+                    0, gpsLocationListener);
             } else {
                 Log.w(Constants.TAG + ":" + TAG, "GPS not enabled.");
             }
         }catch(Exception ex){
             Log.w(Constants.TAG + ":" + TAG, "Exception: GPS not enabled.");
         }
-        
+
         try{
             if(locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 ConnectivityManager connectivityMgr = (ConnectivityManager)
@@ -136,20 +136,20 @@ public class RepeatingAlarm extends BroadcastReceiver {
 
                 if (wifiInfo.isAvailable() == true) {
                     locationManager.requestLocationUpdates(
-                        LocationManager.NETWORK_PROVIDER, Constants.MIN_TIME_MILLIS,
-                        Constants.MIN_DISTANCE_METERS, wifiLocationListener);
-                    
+                        LocationManager.NETWORK_PROVIDER, 0,
+                        0, wifiLocationListener);
+
                 } else {
                     Log.w(Constants.TAG + ":" + TAG, "WIFI not available.");
                     NetworkInfo mobileInfo = connectivityMgr
                         .getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
 
-                    if (mobileInfo.isAvailable() == true) { 
+                    if (mobileInfo.isAvailable() == true) {
                         locationManager.requestLocationUpdates(
-                            LocationManager.NETWORK_PROVIDER, Constants.MIN_TIME_MILLIS,
-                            Constants.MIN_DISTANCE_METERS, cellLocationListener);
+                            LocationManager.NETWORK_PROVIDER, 0,
+                            0, cellLocationListener);
                     } else {
-                        Log.w(Constants.TAG + ":" + TAG, "CELL not available.");                      
+                        Log.w(Constants.TAG + ":" + TAG, "CELL not available.");
                     }
                 }
             } else {
