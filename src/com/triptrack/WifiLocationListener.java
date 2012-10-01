@@ -19,7 +19,8 @@ class WifiLocationListener extends BaseLocationListener {
       return;
     }
     if (location.getAccuracy() > Constants.WIFI_ACC_THRESHOLD_METERS) {
-      Log.d(Constants.TAG + ":" + TAG, "WiFi accuracy too low");
+      Log.d(Constants.TAG + ":" + TAG,
+            "WiFi accuracy too low: " + location.getAccuracy());
       return;
     }
     locationManager.removeUpdates(this);
