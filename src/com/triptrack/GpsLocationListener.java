@@ -4,11 +4,11 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.util.Log;
 
-class WifiLocationListener extends BaseLocationListener {
-  public static final String TAG = "WifiLocationListener";
+class GpsLocationListener extends BaseLocationListener {
+  public static final String TAG = "GpsLocationListener";
 
-  public WifiLocationListener(LocationSampler locationSampler,
-                              LocationManager locationManager) {
+  public GpsLocationListener(LocationSampler locationSampler,
+                             LocationManager locationManager) {
     super(locationSampler, locationManager);
   }
 
@@ -19,8 +19,7 @@ class WifiLocationListener extends BaseLocationListener {
       return;
     }
     locationManager.removeUpdates(this);
-    Log.d(Constants.TAG + ":" + TAG, "Location: " + location.getAccuracy());
 
-    locationSampler.setLocation(location);
+    locationSampler.setLocation(TAG, location);
   }
 }
