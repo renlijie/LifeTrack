@@ -7,45 +7,57 @@ public final class Constants {
   /**
    * application-level tag
    */
-  public static final String TAG = "TripTrackLog";
+  static final String TAG = "TripTrackLog";
 
   /**
    * default sampling interval
    */
-  public static final int DEFAULT_INTERVAL_MINS = 10;
+  static final int DEFAULT_INTERVAL_MINS = 10;
 
   /**
    * the maximum radius for a fix to be accepted as a WiFi fix.
    */
-  public static final int WIFI_ACC_THRESHOLD_METERS = 200;
+  static final int WIFI_ACC_THRESHOLD_METERS = 200;
 
   /**
    * name of the application's shared preferences file
    */
-  public static final String PREFS_NAME = "TrackingPref";
+  static final String PREFS_NAME = "TrackingPref";
 
   /**
    * name of the exported csv file.
    */
-  public static final String HISTORY_FILE = "FixHistory.dat";
+  static final String HISTORY_FILE = "FixHistory.dat";
 
   /**
    * key to check whether location sample is enabled.
    */
-  public static final String ENABLED = "Enabled";
+  static final String ENABLED = "Enabled";
 
   /**
    * key to check the current sampling interval.
    */
-  public static final String INTERVAL_MINS = "intervalMins";
+  static final String INTERVAL_MINS = "intervalMins";
 
   /**
    * keys for a fix's UTC, latitude, longitude and accuracy in db.
    */
-  public static final String KEY_UTC = "utc";
-  public static final String KEY_LAT = "lat";
-  public static final String KEY_LNG = "lng";
-  public static final String KEY_ACC = "acc";
+  static final String KEY_UTC = "utc";
+  static final String KEY_LAT = "lat";
+  static final String KEY_LNG = "lng";
+  static final String KEY_ACC = "acc";
+
+  /**
+   * minimum accuracies in meters of an acceptable fix in each category.
+   */
+  static final double GPS_MIN_ACCURACY = 100;
+  static final double WIFI_MIN_ACCURACY = 200;
+  static final double CELL_MIN_ACCURACY = 1000000;
+
+  /**
+   * GPS/WiFi timeout
+   */
+  static final int TIMEOUT_SECS = 20;
 
   /**
    * asynchronous UI control params.
@@ -59,7 +71,7 @@ public final class Constants {
   /**
    * about page
    */
-  public static final String ABOUT =
+  static final String ABOUT =
     "Ever find yourself too lazy to keep records of where you have been on your amazing trip while you really should?\n\n" +
 
     "TripTrack is designed just for doing that " + "\u2014" + " automatically!\n\n" +
@@ -90,10 +102,5 @@ public final class Constants {
     "(lijie.project@gmail.com)";
 
   // ----------------- not in use---------------------
-
-  /**
-   * GPS/WiFi timeout
-   */
-  public static final int TIMEOUT_SECS = 60;
 
 }

@@ -26,28 +26,44 @@ public class LocationSampler extends BroadcastReceiver {
     writeToDb(location);
   }
 
-  @Override
-  public void onReceive(Context context, Intent intent) {
-    this.context = context;
+  public void useNextListener(BaseLocationListener locationListener) {
+    if (locationListener instanceof GpsLocationListener) {
+      Log.d(Constants.TAG + ":" + TAG, "Switch to WiFi listener.");
+      LocationManager locationManager = (LocationManager) context
+        .getSystemService(Context.LOCATION_SERVICE);
+      if (!tryWifi(locationManager))
+        if (!tryCell(locationManager))
+          Log.d(Constants.TAG + ":" + TAG, "Give up.");
+    } else if (locationListener instanceof WifiLocationListener) {
+      Log.d(Constants.TAG + ":" + TAG, "Switch to Cell listener.");
+      LocationManager locationManager = (LocationManager) context
+        .getSystemService(Context.LOCATION_SERVICE);
+      if (!tryCell(locationManager))
+        Log.d(Constants.TAG + ":" + TAG, "Give up.");
+    } else if (locationListener instanceof CellLocationListener) {
+      Log.d(Constants.TAG + ":" + TAG, "No listener left. Give up.");
+    } else {
+      throw new IllegalArgumentException("Illegal listener type: "
+        + locationListener.getClass().getName());
+    }
+  }
 
-    LocationManager locationManager = (LocationManager) context
-      .getSystemService(Context.LOCATION_SERVICE);
-    GpsLocationListener gpsLocationListener =
-      new GpsLocationListener(this, locationManager);
-    WifiLocationListener wifiLocationListener =
-      new WifiLocationListener(this, locationManager);
-    CellLocationListener cellLocationListener =
-      new CellLocationListener(this, locationManager);
-
+  private boolean tryGps(LocationManager locationManager) {
     if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
       Log.d(Constants.TAG + ":" + TAG, "GPS enabled.");
       // register a gps location listener
+      GpsLocationListener gpsLocationListener =
+        new GpsLocationListener(this, locationManager);
       locationManager.requestLocationUpdates(
         LocationManager.GPS_PROVIDER, 0, 0, gpsLocationListener);
+      return true;
     } else {
       Log.d(Constants.TAG + ":" + TAG, "GPS not enabled.");
+      return false;
     }
+  }
 
+  private boolean tryWifi(LocationManager locationManager) {
     if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
       ConnectivityManager connectivityManager = (ConnectivityManager)
         context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -57,23 +73,50 @@ public class LocationSampler extends BroadcastReceiver {
       if (wifiInfo.isAvailable() == true) {
         Log.d(Constants.TAG + ":" + TAG, "WiFi available.");
         // register a wifi location listener
+        WifiLocationListener wifiLocationListener =
+          new WifiLocationListener(this, locationManager);
         locationManager.requestLocationUpdates(
           LocationManager.NETWORK_PROVIDER, 0, 0, wifiLocationListener);
+        return true;
       } else {
         Log.d(Constants.TAG + ":" + TAG, "WiFi not available.");
-        NetworkInfo mobileInfo = connectivityManager
-          .getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
-        if (mobileInfo.isAvailable() == true) {
-          Log.d(Constants.TAG + ":" + TAG, "Cell available.");
-          // register a cell location listener
-          locationManager.requestLocationUpdates(
-            LocationManager.NETWORK_PROVIDER, 0, 0, cellLocationListener);
-        } else {
-          Log.d(Constants.TAG + ":" + TAG, "Cell not available.");
-        }
       }
-    } else {
-      Log.w(Constants.TAG + ":" + TAG, "WiFi and Cell not available.");
     }
+    return false;
+  }
+
+  private boolean tryCell(LocationManager locationManager) {
+    if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+      ConnectivityManager connectivityManager = (ConnectivityManager)
+        context.getSystemService(Context.CONNECTIVITY_SERVICE);
+      NetworkInfo mobileInfo = connectivityManager
+        .getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+
+      if (mobileInfo.isAvailable() == true) {
+        Log.d(Constants.TAG + ":" + TAG, "Cell available.");
+        // register a cell location listener
+        CellLocationListener cellLocationListener =
+          new CellLocationListener(this, locationManager);
+        locationManager.requestLocationUpdates(
+          LocationManager.NETWORK_PROVIDER, 0, 0, cellLocationListener);
+        return true;
+      } else {
+        Log.d(Constants.TAG + ":" + TAG, "Cell not available.");
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public void onReceive(Context context, Intent intent) {
+    this.context = context;
+
+    LocationManager locationManager = (LocationManager) context
+      .getSystemService(Context.LOCATION_SERVICE);
+
+    if (!tryGps(locationManager))
+      if (!tryWifi(locationManager))
+        if (!tryCell(locationManager))
+          Log.d(Constants.TAG + ":" + TAG, "Give up.");
   }
 }

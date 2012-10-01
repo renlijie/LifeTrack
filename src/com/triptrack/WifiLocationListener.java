@@ -5,11 +5,16 @@ import android.location.LocationManager;
 import android.util.Log;
 
 class WifiLocationListener extends BaseLocationListener {
-  public static final String TAG = "WifiLocationListener";
+  private static final String TAG = "WifiLocationListener";
 
   public WifiLocationListener(LocationSampler locationSampler,
                               LocationManager locationManager) {
     super(locationSampler, locationManager);
+  }
+
+  @Override
+  public double getMinAccuracy() {
+    return Constants.WIFI_MIN_ACCURACY;
   }
 
   @Override
@@ -26,5 +31,6 @@ class WifiLocationListener extends BaseLocationListener {
     locationManager.removeUpdates(this);
 
     locationSampler.setLocation(TAG, location);
+    isCompleted = true;
   }
 }
