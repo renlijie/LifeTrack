@@ -47,7 +47,6 @@ public final class Constants {
    */
   static final double GPS_MIN_ACCURACY = 100;
   static final double WIFI_MIN_ACCURACY = 200;
-  static final double CELL_MIN_ACCURACY = 1000000;
 
   /**
    * GPS/network timeout
