@@ -14,11 +14,6 @@ class CellLocationListener extends BaseLocationListener {
   }
 
   @Override
-  public double getMinAccuracy() {
-    return Constants.CELL_MIN_ACCURACY;
-  }
-
-  @Override
   public void onLocationChanged(Location location) {
     if (location == null) {
       Log.w(Constants.TAG + ":" + TAG, "location is null!");

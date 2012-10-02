@@ -14,17 +14,12 @@ class WifiLocationListener extends BaseLocationListener {
   }
 
   @Override
-  public double getMinAccuracy() {
-    return Constants.WIFI_MIN_ACCURACY;
-  }
-
-  @Override
   public void onLocationChanged(Location location) {
     if (location == null) {
       Log.w(Constants.TAG + ":" + TAG, "location is null!");
       return;
     }
-    if (location.getAccuracy() > Constants.WIFI_ACC_THRESHOLD_METERS) {
+    if (location.getAccuracy() > Constants.WIFI_MIN_ACCURACY) {
       Log.d(Constants.TAG + ":" + TAG,
             "WiFi accuracy too low: " + location.getAccuracy());
       return;

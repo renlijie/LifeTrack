@@ -15,11 +15,6 @@ public final class Constants {
   static final int DEFAULT_INTERVAL_MINS = 10;
 
   /**
-   * the maximum radius for a fix to be accepted as a WiFi fix.
-   */
-  static final int WIFI_ACC_THRESHOLD_METERS = 200;
-
-  /**
    * name of the application's shared preferences file
    */
   static final String PREFS_NAME = "TrackingPref";
@@ -48,7 +43,7 @@ public final class Constants {
   static final String KEY_ACC = "acc";
 
   /**
-   * minimum accuracies in meters of an acceptable fix in each category.
+   * the maximum radius in meters of an acceptable fix in each category.
    */
   static final double GPS_MIN_ACCURACY = 100;
   static final double WIFI_MIN_ACCURACY = 200;
@@ -57,8 +52,8 @@ public final class Constants {
   /**
    * GPS/network timeout
    */
-  static final int GPS_TIMEOUT_SECS = 20;
-  static final int NETWORK_TIMEOUT_SECS = 5;
+  static final int GPS_TIMEOUT_SECS = 60;
+  static final int NETWORK_TIMEOUT_SECS = 30;
 
   /**
    * asynchronous UI control params.

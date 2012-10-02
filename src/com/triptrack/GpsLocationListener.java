@@ -14,14 +14,14 @@ class GpsLocationListener extends BaseLocationListener {
   }
 
   @Override
-  public double getMinAccuracy() {
-    return Constants.GPS_MIN_ACCURACY;
-  }
-
-  @Override
   public void onLocationChanged(Location location) {
     if (location == null) {
       Log.w(Constants.TAG + ":" + TAG, "location is null!");
+      return;
+    }
+    if (location.getAccuracy() > Constants.GPS_MIN_ACCURACY) {
+      Log.d(Constants.TAG + ":" + TAG,
+            "GPS accuracy too low: " + location.getAccuracy());
       return;
     }
     locationManager.removeUpdates(this);

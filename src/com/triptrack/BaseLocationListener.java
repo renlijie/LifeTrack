@@ -34,8 +34,6 @@ abstract class BaseLocationListener implements LocationListener {
     Log.d(Constants.TAG + ":" + TAG, "Added timeout: " + timeoutSecs);
   }
 
-  abstract public double getMinAccuracy();
-
   @Override
   public void onStatusChanged(String provider, int status, Bundle extras) {}
 
