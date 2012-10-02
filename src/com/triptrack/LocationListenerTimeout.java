@@ -22,7 +22,7 @@ public class LocationListenerTimeout implements Runnable {
   public void run() {
     if (locationListener.isCompleted()) {
       Log.d(Constants.TAG + ":" + TAG,
-            locationListener.getClass().getName() + "has already completed.");
+            locationListener.getClass().getName() + " has already completed.");
       return;
     }
     Log.d(Constants.TAG + ":" + TAG,

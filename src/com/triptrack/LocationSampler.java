@@ -53,7 +53,9 @@ public class LocationSampler extends BroadcastReceiver {
       Log.d(Constants.TAG + ":" + TAG, "GPS enabled.");
       // register a gps location listener
       GpsLocationListener gpsLocationListener =
-        new GpsLocationListener(this, locationManager);
+        new GpsLocationListener(this,
+                                locationManager,
+                                Constants.GPS_TIMEOUT_SECS);
       locationManager.requestLocationUpdates(
         LocationManager.GPS_PROVIDER, 0, 0, gpsLocationListener);
       return true;
@@ -74,7 +76,9 @@ public class LocationSampler extends BroadcastReceiver {
         Log.d(Constants.TAG + ":" + TAG, "WiFi available.");
         // register a wifi location listener
         WifiLocationListener wifiLocationListener =
-          new WifiLocationListener(this, locationManager);
+          new WifiLocationListener(this,
+                                   locationManager,
+                                   Constants.NETWORK_TIMEOUT_SECS);
         locationManager.requestLocationUpdates(
           LocationManager.NETWORK_PROVIDER, 0, 0, wifiLocationListener);
         return true;
@@ -96,7 +100,9 @@ public class LocationSampler extends BroadcastReceiver {
         Log.d(Constants.TAG + ":" + TAG, "Cell available.");
         // register a cell location listener
         CellLocationListener cellLocationListener =
-          new CellLocationListener(this, locationManager);
+          new CellLocationListener(this,
+                                   locationManager,
+                                   Constants.NETWORK_TIMEOUT_SECS);
         locationManager.requestLocationUpdates(
           LocationManager.NETWORK_PROVIDER, 0, 0, cellLocationListener);
         return true;

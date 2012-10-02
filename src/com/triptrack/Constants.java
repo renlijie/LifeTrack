@@ -55,9 +55,10 @@ public final class Constants {
   static final double CELL_MIN_ACCURACY = 1000000;
 
   /**
-   * GPS/WiFi timeout
+   * GPS/network timeout
    */
-  static final int TIMEOUT_SECS = 20;
+  static final int GPS_TIMEOUT_SECS = 20;
+  static final int NETWORK_TIMEOUT_SECS = 5;
 
   /**
    * asynchronous UI control params.

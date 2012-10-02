@@ -8,8 +8,9 @@ class WifiLocationListener extends BaseLocationListener {
   private static final String TAG = "WifiLocationListener";
 
   public WifiLocationListener(LocationSampler locationSampler,
-                              LocationManager locationManager) {
-    super(locationSampler, locationManager);
+                              LocationManager locationManager,
+                              int timeoutSec) {
+    super(locationSampler, locationManager, timeoutSec);
   }
 
   @Override

@@ -12,6 +12,7 @@ abstract class BaseLocationListener implements LocationListener {
 
   protected LocationSampler locationSampler;
   protected LocationManager locationManager;
+  protected int timeoutSecs;
   protected boolean isCompleted = false;
 
   public boolean isCompleted() {
@@ -19,17 +20,18 @@ abstract class BaseLocationListener implements LocationListener {
   }
 
   public BaseLocationListener(LocationSampler locationSampler,
-                              LocationManager locationManager) {
+                              LocationManager locationManager,
+                              int timeoutSecs) {
     this.locationSampler = locationSampler;
     this.locationManager = locationManager;
+    this.timeoutSecs = timeoutSecs;
 
     Handler timeout = new Handler();
     timeout.postDelayed(new LocationListenerTimeout(locationSampler,
                                                     locationManager,
                                                     this),
-                        Constants.TIMEOUT_SECS * 1000);
-    Log.d(Constants.TAG + ":" + TAG, "Added timeout: "
-            + Constants.TIMEOUT_SECS);
+                        timeoutSecs * 1000);
+    Log.d(Constants.TAG + ":" + TAG, "Added timeout: " + timeoutSecs);
   }
 
   abstract public double getMinAccuracy();

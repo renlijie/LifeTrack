@@ -8,8 +8,9 @@ class GpsLocationListener extends BaseLocationListener {
   public static final String TAG = "GpsLocationListener";
 
   public GpsLocationListener(LocationSampler locationSampler,
-                             LocationManager locationManager) {
-    super(locationSampler, locationManager);
+                             LocationManager locationManager,
+                             int timeoutSec) {
+    super(locationSampler, locationManager, timeoutSec);
   }
 
   @Override
