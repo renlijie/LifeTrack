@@ -6,46 +6,44 @@
     <string name="app_name">TripTrack</string>
     <!-- shown as map activity name -->
     <string name="map_name">HistoryMap</string>
-        
+
     <string name="start_repeating_alarm">Start recording my locations!</string>
     <string name="stop_repeating_alarm">Stop recording my locations!</string>
     <string name="repeating_scheduled">Location recording started.</string>
     <string name="repeating_unscheduled">Location recording stopped.</string>
-    
+
     <string name="set_interval">Set sampling interval</string>
     <string name="set_interval_direction">Set the sampling interval in minutes.</string>
     <string name="set_interval_invalid">Please input a number greater than 0.</string>
     <string name="set_interval_not_changed">Sampling interval not changed:</string>
 	<string name="set_interval_changed">Sampling interval changed to:</string>
-    
+
     <string name="usage">Enable this app to record your locations.</string>
 
     <string name="import_history">Import my location history</string>
     <string name="import_confirmation">Are you sure you want to import your data from the following plain text file?</string>
     <string name="import_in_progress">Importing…</string>
     <string name="import_canceled">Not importing.</string>
-    <string name="import_finished">Importing completed.</string>
-    <string name="import_finished_with_error">Importing completed with errors.</string>
-    
+
     <string name="export_history">Export my location history</string>
     <string name="export_confirmation">Are you sure you want to export your data to the following plain text file?</string>
     <string name="export_in_progress">Exporting…</string>
     <string name="export_canceled">Not exporting.</string>
     <string name="export_nothing">Nothing to export. Abort.</string>
     <string name="export_finished">Exporting completed.</string>
-    
+
     <string name="clear_history">Clear my location history</string>
     <string name="clear_confirmation">Are you sure you want to clear your history?</string>
     <string name="clear_canceled">Not clearing history.</string>
     <string name="clear_finished">History cleared.</string>
-        
+
     <string name="show_history">Show my history</string>
     <string name="previous_day">previous day</string>
     <string name="next_day">next day</string>
     <string name="all_days">all days</string>
 
     <string name="about">About</string>
-    
+
     <string name="not_implemented">Not implemented yet!</string>
-    
+
 </resources>

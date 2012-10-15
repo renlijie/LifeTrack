@@ -58,9 +58,8 @@ public final class Constants {
    * asynchronous UI control params.
    */
   static final int HANDLER_TOAST = 0;
-  static final int HANDLER_PROGRESSBAR_SHOW = 1;
   static final int HANDLER_PROGRESSBAR_DISMISS = 2;
-  static final int HANDLER_PROGRESSBAR_SETMAX = 3;
+  static final int HANDLER_PROGRESSBAR_SHOWMAX = 3;
   static final int HANDLER_PROGRESSBAR_SETPROGRESS = 4;
 
   /**

@@ -26,15 +26,17 @@ public class FixDataStore {
   private static final String DATABASE_TABLE = "fixes";
   private static final int DATABASE_VERSION = 4;
 
-  private final Context mCtx;
+  private final Context context;
 
-  private DatabaseHelper mDbHelper;
-  private SQLiteDatabase mDb;
+  //TODO: add UI handler from MainActivity
 
-  private static final String DATABASE_CREATE = "create table " +
-    DATABASE_TABLE + " (" + Constants.KEY_UTC + " long primary key, " +
-    Constants.KEY_LAT + " double, " + Constants.KEY_LNG + " double, " +
-    Constants.KEY_ACC + " single);";
+  private DatabaseHelper databaseHelper;
+  private SQLiteDatabase database;
+
+  private static final String DATABASE_CREATE = "create table " + DATABASE_TABLE
+    + " (" + Constants.KEY_UTC + " long primary key, "
+    + Constants.KEY_LAT + " double, " + Constants.KEY_LNG + " double, "
+    + Constants.KEY_ACC + " single);";
 
   private static class DatabaseHelper extends SQLiteOpenHelper {
     DatabaseHelper(Context context) {
@@ -50,33 +52,36 @@ public class FixDataStore {
     @Override
     public void
     onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-      Log.w(Constants.TAG + ":" + TAG,
-        "Upgrading database from version " + oldVersion + " to " +
-        newVersion + ", which will destroy all old data");
+      // TODO: Migrate all fixes.
+      Log.w(Constants.TAG + ":" + TAG, "Upgrading database from version " + oldVersion
+        + " to " + newVersion + ", which will destroy all old data");
       db.execSQL("DROP TABLE IF EXISTS " + DATABASE_TABLE);
       onCreate(db);
     }
   }
 
-  public FixDataStore(Context ctx) {
-    this.mCtx = ctx;
+  public FixDataStore(Context context) {
+    this.context = context;
   }
 
   public FixDataStore open() {
-    mDbHelper = new DatabaseHelper(mCtx);
+    databaseHelper = new DatabaseHelper(context);
     int waitMillis = 100;
     while (true) {
       try {
-        mDb = mDbHelper.getWritableDatabase();
+        database = databaseHelper.getWritableDatabase();
         break;
       } catch (SQLException e) {
         Log.w(Constants.TAG + ":" + TAG, "Database not available. Wait for "
           + Integer.toString(waitMillis) + " ms.");
       }
       try {
+        // Wait in case the database is not immediately available.
         Thread.sleep(waitMillis);
         if (waitMillis < 5000) {
           waitMillis *= 2;
+        } else {
+          // TODO: show Toast("Database not available. Try again later.")
         }
       } catch (InterruptedException e) {
         Log.w(Constants.TAG + ":" + TAG, e.toString());
@@ -87,93 +92,80 @@ public class FixDataStore {
   }
 
   public void close() {
-    mDbHelper.close();
+    databaseHelper.close();
   }
 
-  public void exportToFile(File file, Handler mHandler) {
-    Cursor c = fetchFixes(0);
-    if (c.moveToFirst()) {
+  public void exportToFile(File file, Handler handler) {
+    Cursor cursor = fetchFixes(0);
+    if (cursor.moveToFirst()) {
       FileOutputStream fos;
       try {
         fos = new FileOutputStream(file);
-        fos.write((c.getCount() + "\n").getBytes());
+        fos.write((cursor.getCount() + "\n").getBytes());
       } catch (IOException e) {
-        mHandler.sendMessage(Message.obtain(mHandler,
-          Constants.HANDLER_TOAST, 0, 0, "Opening " + file +
-          " failed. Do you have access?"));
+        handler.sendMessage(Message.obtain(handler, Constants.HANDLER_TOAST, 0, 0,
+          "Opening " + file + " failed. Do you have access?"));
         Log.w(Constants.TAG + ":" + TAG, "Opening " + file + " failed.");
         return;
       }
 
       int size = 0;
-      mHandler.sendMessage(Message.obtain(mHandler,
-        Constants.HANDLER_PROGRESSBAR_SETMAX, c.getCount(), 0, null));
-      mHandler.sendMessage(Message.obtain(mHandler,
-        Constants.HANDLER_PROGRESSBAR_SHOW, 0, 0, null));
+      handler.sendMessage(Message.obtain(handler,
+        Constants.HANDLER_PROGRESSBAR_SHOWMAX, cursor.getCount(), 0, null));
 
       while (true) {
-        String r =
-          Long.toString(c.getLong((c.getColumnIndex(Constants.KEY_UTC))))
-            + ","
-            + Double.toString(c.getDouble(c.getColumnIndex(Constants.KEY_LAT)))
-            + ","
-            + Double.toString(c.getDouble(c.getColumnIndex(Constants.KEY_LNG)))
-            + ","
-            + Float.toString(c.getFloat(c.getColumnIndex(Constants.KEY_ACC)))
-            + "\n";
+        String r = Long.toString(cursor.getLong((cursor.getColumnIndex(Constants.KEY_UTC)))) + ","
+          + Double.toString(cursor.getDouble(cursor.getColumnIndex(Constants.KEY_LAT))) + ","
+          + Double.toString(cursor.getDouble(cursor.getColumnIndex(Constants.KEY_LNG))) + ","
+          + Float.toString(cursor.getFloat(cursor.getColumnIndex(Constants.KEY_ACC))) + "\n";
         try {
           fos.write(r.getBytes());
         } catch (IOException e) {
-          mHandler.sendMessage(Message.obtain(mHandler,
+          handler.sendMessage(Message.obtain(handler,
             Constants.HANDLER_TOAST, 0, 0, "Writing to " + file + " failed."));
           Log.w(Constants.TAG + ":" + TAG, "Writing " + r + " failed.");
         }
         size++;
         if (size % 1000 == 0) {
-          mHandler.sendMessage(Message.obtain(mHandler,
+          handler.sendMessage(Message.obtain(handler,
             Constants.HANDLER_PROGRESSBAR_SETPROGRESS, size, 0, null));
         }
-        if (c.isLast()) {
+        if (cursor.isLast()) {
           break;
         }
-        c.moveToNext();
+        cursor.moveToNext();
       }
 
       try {
         fos.close();
       } catch (IOException e) {
-        mHandler.sendMessage(Message.obtain(mHandler,
+        handler.sendMessage(Message.obtain(handler,
           Constants.HANDLER_TOAST, 0, 0, "Closing " + file + " failed."));
         Log.w(Constants.TAG + ":" + TAG, "Closing " + file + " failed.");
       }
-      mHandler.sendMessage(Message.obtain(mHandler, Constants.HANDLER_TOAST,
-        0, 0, mCtx.getString(R.string.export_finished)));
+      handler.sendMessage(Message.obtain(handler, Constants.HANDLER_TOAST,
+        0, 0, context.getString(R.string.export_finished)));
       Log.d(Constants.TAG + ":" + TAG,
-        mCtx.getString(R.string.export_finished));
+        context.getString(R.string.export_finished));
     } else {
-      mHandler.sendMessage(Message.obtain(mHandler, Constants.HANDLER_TOAST,
-        0, 0, mCtx.getString(R.string.export_nothing)));
+      handler.sendMessage(Message.obtain(handler, Constants.HANDLER_TOAST,
+        0, 0, context.getString(R.string.export_nothing)));
     }
-    c.close();
+    cursor.close();
   }
 
-  public void importFromFile(File file, Handler mHandler) {
-    // A flag to show if any error happened during importing.
-    boolean noError = true;
-
+  public void importFromFile(File file, Handler handler) {
     // Open a reader.
     FileInputStream fis;
     try {
       fis = new FileInputStream(file);
     } catch (IOException e) {
-      mHandler.sendMessage(Message.obtain(mHandler,
-        Constants.HANDLER_TOAST, 0, 0, "Opening " + file +
-        " failed. Does it exist?"));
+      handler.sendMessage(Message.obtain(handler,
+        Constants.HANDLER_TOAST, 0, 0, "Opening " + file + " failed. Does it exist?"));
       Log.w(Constants.TAG + ":" + TAG, "Opening " + file + " failed.");
       return;
     }
-    BufferedReader br = new BufferedReader(new InputStreamReader(
-      new DataInputStream(fis)));
+    BufferedReader br = new BufferedReader(new InputStreamReader(new DataInputStream(fis)));
 
     // Read the first line as the total number of fixes.
     String str;
@@ -181,7 +173,7 @@ public class FixDataStore {
     try {
       str = br.readLine();
     } catch (IOException e) {
-      mHandler.sendMessage(Message.obtain(mHandler,
+      handler.sendMessage(Message.obtain(handler,
         Constants.HANDLER_TOAST, 0, 0, "Reading " + file + " failed."));
       Log.w(Constants.TAG + ":" + TAG, "Reading " + file + " failed.");
       return;
@@ -196,49 +188,54 @@ public class FixDataStore {
         br.close();
         fis = new FileInputStream(file);
       } catch (IOException ex) {
-        mHandler.sendMessage(Message.obtain(mHandler,
-          Constants.HANDLER_TOAST, 0, 0, "Opening " + file +
-          " failed. Does it exist?"));
+        handler.sendMessage(Message.obtain(handler,
+          Constants.HANDLER_TOAST, 0, 0, "Opening " + file + " failed. Does it exist?"));
         Log.w(Constants.TAG + ":" + TAG, "Opening " + file + " failed.");
         return;
       }
-      br = new BufferedReader(new InputStreamReader(
-        new DataInputStream(fis)));
+      br = new BufferedReader(new InputStreamReader(new DataInputStream(fis)));
 
       // Assign a fake size.
       size = Integer.MAX_VALUE;
 
       // Notify the user and set the flag. Continue.
-      mHandler.sendMessage(Message.obtain(mHandler, Constants.HANDLER_TOAST,
+      handler.sendMessage(Message.obtain(handler, Constants.HANDLER_TOAST,
         0, 0, "Reading size failed. But continue."));
       Log.w(Constants.TAG + ":" + TAG, "Reading size failed." + str);
-      noError = false;
     }
 
     // Show the progress bar.
-    mHandler.sendMessage(Message.obtain(mHandler,
-      Constants.HANDLER_PROGRESSBAR_SETMAX, size, 0,
-          null));
-    mHandler.sendMessage(Message.obtain(mHandler,
-      Constants.HANDLER_PROGRESSBAR_SHOW, 0, 0, null));
+    handler.sendMessage(Message.obtain(handler,
+      Constants.HANDLER_PROGRESSBAR_SHOWMAX, size, 0, null));
 
     long utc;
     double lat, lng;
     float acc;
 
-    // The number of fix currently being imported.
+    // The index of fix currently being imported.
     size = 0;
+    // The number of fixes written successfully.
+    int goodSize = 0;
+    // The number of illegal fixes.
+    int badSize = 0;
+    // The number of fixes written unsuccessfully.
+    int dupSize = 0;
 
-    mDb.beginTransaction();
+    // Use transaction to significantly improve efficiency.
+    database.beginTransaction();
 
     while (true) {
       size++;
+      if (size % 1000 == 0) {
+        handler.sendMessage(Message.obtain(handler,
+          Constants.HANDLER_PROGRESSBAR_SETPROGRESS, size, 0, null));
+      }
 
       // Read the current line. Should contain a fix.
       try {
         str = br.readLine();
       } catch (IOException e) {
-        mHandler.sendMessage(Message.obtain(mHandler,
+        handler.sendMessage(Message.obtain(handler,
           Constants.HANDLER_TOAST, 0, 0, "Reading " + file + " failed."));
         Log.w(Constants.TAG + ":" + TAG, "Reading " + file + " failed.");
         return;
@@ -250,8 +247,8 @@ public class FixDataStore {
       // Parse the string as a fix.
       String[] entry = str.split(",");
       if (entry.length < 4) {
+        badSize++;
         Log.e(Constants.TAG + ":" + TAG, str + " is not valid data!");
-        noError = false;
         continue;
       }
 
@@ -262,16 +259,14 @@ public class FixDataStore {
         lng = Double.parseDouble(entry[2]);
         acc = Float.parseFloat(entry[3]);
       } catch (NumberFormatException e) {
-        noError = false;
-        Log.w(Constants.TAG + ":" + TAG, "Reading fix #" + size +
-            " failed.");
+        badSize++;
+        Log.w(Constants.TAG + ":" + TAG, "Reading fix #" + size + " failed.");
         continue;
       }
       if (utc < 0 || lat < -90 || lat > 90 || lng > 180 || lng < -180 ||
           acc < 0) {
-        noError = false;
-        Log.w(Constants.TAG + ":" + TAG, "Not valid: fix #" + size +
-          ".");
+        badSize++;
+        Log.w(Constants.TAG + ":" + TAG, "Not valid: fix #" + size + ".");
         continue;
       }
 
@@ -279,49 +274,40 @@ public class FixDataStore {
       // SQLException will occur. Catch it.
       try {
         createFix(utc, lat, lng, acc);
-        if (size % 1000 == 0) {
-          mHandler.sendMessage(Message.obtain(mHandler,
-            Constants.HANDLER_PROGRESSBAR_SETPROGRESS, size, 0, null));
-        }
-        // TODO: increment real size
+        goodSize++;
       } catch (SQLException e) {
-        noError = false;
+        dupSize++;
         Log.w(Constants.TAG + ":" + TAG, "SQLException at fix #" + size + ".");
       }
     }
 
-    mDb.setTransactionSuccessful();
-    mDb.endTransaction();
+    database.setTransactionSuccessful();
+    database.endTransaction();
 
-    // Notify the user if error has occurred during the process.
-    if (noError) {
-      mHandler.sendMessage(Message.obtain(mHandler, Constants.HANDLER_TOAST,
-        0, 0, mCtx.getString(R.string.import_finished)));
-      Log.d(Constants.TAG + ":" + TAG,
-        mCtx.getString(R.string.import_finished));
-    } else {
-      mHandler.sendMessage(Message.obtain(mHandler, Constants.HANDLER_TOAST,
-        0, 0, mCtx.getString(R.string.import_finished_with_error)));
-      Log.d(Constants.TAG + ":" + TAG,
-        mCtx.getString(R.string.import_finished_with_error));
-    }
+    // Notify the user about the stats.
+    String stats = "Done. Read " + Integer.toString(goodSize + dupSize + badSize) + " fixes.\n"
+      + Integer.toString(goodSize) + " fixes are written successfully.\n"
+      + Integer.toString(dupSize) + " timestamps already exist in the database.\n"
+      + Integer.toString(badSize) + " fixes are not valid.";
+    handler.sendMessage(Message.obtain(handler, Constants.HANDLER_TOAST, 0, 0, stats));
+    Log.d(Constants.TAG + ":" + TAG, stats);
 
     // Close the reader.
     try {
       br.close();
     } catch (IOException e) {
-      mHandler.sendMessage(Message.obtain(mHandler,
+      handler.sendMessage(Message.obtain(handler,
         Constants.HANDLER_TOAST, 0, 0, "Closing " + file + " failed."));
       Log.w(Constants.TAG + ":" + TAG, "Closing " + file + " failed.");
     }
   }
 
   public void clearHistory() {
-    mDb.execSQL("DELETE FROM " + DATABASE_TABLE);
+    database.execSQL("DELETE FROM " + DATABASE_TABLE);
   }
 
   public void delete(long utc) {
-    mDb.delete(DATABASE_TABLE,
+    database.delete(DATABASE_TABLE,
       Constants.KEY_UTC + "=" + Long.toString(utc), null);
   }
 
@@ -333,12 +319,12 @@ public class FixDataStore {
     cal.set(Calendar.SECOND, 0);
     cal.set(Calendar.MILLISECOND, 0);
 
-    Cursor c = fetchFixes(cal);
-    c.moveToFirst();
+    Cursor cursor = fetchFixes(cal);
+    cursor.moveToFirst();
     do {
-      delete(c.getLong(c.getColumnIndex(Constants.KEY_UTC)));
-    } while (c.moveToNext());
-    c.close();
+      delete(cursor.getLong(cursor.getColumnIndex(Constants.KEY_UTC)));
+    } while (cursor.moveToNext());
+    cursor.close();
   }
 
   // TODO: encrypt
@@ -348,7 +334,7 @@ public class FixDataStore {
     initialValues.put(Constants.KEY_LAT, location.getLatitude());
     initialValues.put(Constants.KEY_LNG, location.getLongitude());
     initialValues.put(Constants.KEY_ACC, location.getAccuracy());
-    return mDb.insert(DATABASE_TABLE, null, initialValues);
+    return database.insert(DATABASE_TABLE, null, initialValues);
   }
 
   /**
@@ -367,18 +353,18 @@ public class FixDataStore {
     initialValues.put(Constants.KEY_LAT, latitude);
     initialValues.put(Constants.KEY_LNG, longitude);
     initialValues.put(Constants.KEY_ACC, accuracy);
-    return mDb.insertOrThrow(DATABASE_TABLE, null, initialValues);
+    return database.insertOrThrow(DATABASE_TABLE, null, initialValues);
   }
 
   // TODO: decrypt
   public Cursor fetchFixes(int size) {
     if (size <= 0) {
-      return mDb.query(DATABASE_TABLE,
+      return database.query(DATABASE_TABLE,
         new String[] { Constants.KEY_UTC, Constants.KEY_LAT,
                        Constants.KEY_LNG, Constants.KEY_ACC },
         null, null, null, null, Constants.KEY_UTC + " DESC", null);
     }
-    return mDb.query(DATABASE_TABLE,
+    return database.query(DATABASE_TABLE,
       new String[] { Constants.KEY_UTC, Constants.KEY_LAT,
                      Constants.KEY_LNG, Constants.KEY_ACC },
       null, null, null, null, Constants.KEY_UTC + " DESC",
@@ -392,7 +378,7 @@ public class FixDataStore {
    */
   public Cursor fetchFixes(Calendar calendar) {
     if (calendar == null) {
-      return mDb.query(DATABASE_TABLE,
+      return database.query(DATABASE_TABLE,
         new String[] { Constants.KEY_UTC, Constants.KEY_LAT,
                        Constants.KEY_LNG, Constants.KEY_ACC },
         null, null, null, null, Constants.KEY_UTC + " DESC", null);
@@ -401,7 +387,7 @@ public class FixDataStore {
     long startMillis = calendar.getTimeInMillis();
     long endMillis = startMillis + 24L * 3600 * 1000 - 1;
 
-    return mDb.query(DATABASE_TABLE,
+    return database.query(DATABASE_TABLE,
       new String[] { Constants.KEY_UTC, Constants.KEY_LAT,
                      Constants.KEY_LNG, Constants.KEY_ACC },
       Constants.KEY_UTC + " BETWEEN ? AND ?",
@@ -410,49 +396,49 @@ public class FixDataStore {
   }
 
   public Calendar previousRecordDay(Calendar calendar) {
-    Cursor c =
-      mDb.query(DATABASE_TABLE,
+    Cursor cursor =
+      database.query(DATABASE_TABLE,
         new String[] { Constants.KEY_UTC, Constants.KEY_LAT,
                        Constants.KEY_LNG, Constants.KEY_ACC },
         Constants.KEY_UTC + " < ?",
         new String[] { Long.toString(calendar.getTimeInMillis()) },
         null, null, Constants.KEY_UTC + " DESC", "1");
-    if (c.getCount() == 0) {
-      c.close();
+    if (cursor.getCount() == 0) {
+      cursor.close();
       return null;
     } else {
-      c.moveToFirst();
+      cursor.moveToFirst();
       Calendar cal = Calendar.getInstance();
-      cal.setTimeInMillis(c.getLong(c.getColumnIndex(Constants.KEY_UTC)));
+      cal.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(Constants.KEY_UTC)));
       cal.set(Calendar.HOUR_OF_DAY, 0);
       cal.set(Calendar.MINUTE, 0);
       cal.set(Calendar.SECOND, 0);
       cal.set(Calendar.MILLISECOND, 0);
-      c.close();
+      cursor.close();
       return cal;
     }
   }
 
   public Calendar nextRecordDay(Calendar calendar) {
-    Cursor c = mDb.query(DATABASE_TABLE,
+    Cursor cursor = database.query(DATABASE_TABLE,
       new String[] { Constants.KEY_UTC, Constants.KEY_LAT,
                      Constants.KEY_LNG, Constants.KEY_ACC },
       Constants.KEY_UTC + " >= ?",
       new String[] { Long.toString(calendar.getTimeInMillis()
                      + 24L * 3600 * 1000) },
       null, null, Constants.KEY_UTC + " ASC", "1");
-    if (c.getCount() == 0) {
-      c.close();
+    if (cursor.getCount() == 0) {
+      cursor.close();
       return null;
     } else {
-      c.moveToFirst();
+      cursor.moveToFirst();
       Calendar cal = Calendar.getInstance();
-      cal.setTimeInMillis(c.getLong(c.getColumnIndex(Constants.KEY_UTC)));
+      cal.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(Constants.KEY_UTC)));
       cal.set(Calendar.HOUR_OF_DAY, 0);
       cal.set(Calendar.MINUTE, 0);
       cal.set(Calendar.SECOND, 0);
       cal.set(Calendar.MILLISECOND, 0);
-      c.close();
+      cursor.close();
       return cal;
     }
   }
