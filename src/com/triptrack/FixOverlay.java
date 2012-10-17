@@ -247,42 +247,24 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
         + String.format("%02d", c.get(Calendar.HOUR_OF_DAY)) + ":"
         + String.format("%02d", c.get(Calendar.MINUTE)) + ":"
         + String.format("%02d", c.get(Calendar.SECOND)))
-      .setMessage("(Latitude, Longitude), Accuracy\n(" + String.format("%1$,.5f", item.lat)
-          + ", " + String.format("%1$,.5f", item.lng) + "), "
-          + String.format("%1$,.3f", item.acc))
-      .setPositiveButton("delete", new DialogInterface.OnClickListener() {
+      .setMessage("Press BACK to cancel. \n\n"
+        + "(Latitude, Longitude), Accuracy\n(" + String.format("%1$,.5f", item.lat)
+        + ", " + String.format("%1$,.5f", item.lng) + "), "
+        + String.format("%1$,.3f", item.acc))
+      .setPositiveButton("Delete this fix", new DialogInterface.OnClickListener() {
         @Override
-        public void onClick(DialogInterface dialog, int id) {
+        public void onClick(DialogInterface dialog, int which) {
           new AlertDialog.Builder(context)
             .setTitle("Confirm").setMessage("DELETE?")
             .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
               @Override
               public void onClick(DialogInterface dialog, int id) {
-                new AlertDialog.Builder(context).
-                setTitle("CONFIRM").setMessage("Choose one")
-                  .setPositiveButton("Delete this fix", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                      FixDataStore fixDataStore = new FixDataStore(context);
-                      fixDataStore.open();
-                      fixDataStore.delete(item.utc);
-                      fixDataStore.close();
-                      map.prepareRows(0, false, false);
-                      Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
-                    }
-                  })
-                  .setNegativeButton("DELETE THIS DAY", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                      FixDataStore fixDataStore = new FixDataStore(context);
-                      fixDataStore.open();
-                      fixDataStore.deleteDay(item.utc);
-                      fixDataStore.close();
-                      map.prepareRows(0, false, false);
-                      Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
-                    }
-                  })
-                  .show();
+                FixDataStore fixDataStore = new FixDataStore(context);
+                fixDataStore.open();
+                fixDataStore.delete(item.utc);
+                fixDataStore.close();
+                map.prepareRows(0, false, false);
+                Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
               }
             })
             .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -294,12 +276,32 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
             .show();
         }
       })
-      .setNegativeButton("back", new DialogInterface.OnClickListener() {
+      .setNegativeButton("DELETE THIS DAY", new DialogInterface.OnClickListener() {
         @Override
-        public void onClick(DialogInterface dialog, int id) {
-          dialog.cancel();
+        public void onClick(DialogInterface dialog, int which) {
+          new AlertDialog.Builder(context)
+            .setTitle("Confirm").setMessage("DELETE?")
+            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialog, int which) {
+                FixDataStore fixDataStore = new FixDataStore(context);
+                fixDataStore.open();
+                fixDataStore.deleteDay(item.utc);
+                fixDataStore.close();
+                map.prepareRows(0, false, false);
+                Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
+              }
+            })
+            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+              }
+            })
+            .show();
         }
-      }).show();
+      })
+      .show();
     return true;
   }
 }

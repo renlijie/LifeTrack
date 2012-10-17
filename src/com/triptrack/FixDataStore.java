@@ -319,12 +319,10 @@ public class FixDataStore {
     cal.set(Calendar.SECOND, 0);
     cal.set(Calendar.MILLISECOND, 0);
 
-    Cursor cursor = fetchFixes(cal);
-    cursor.moveToFirst();
-    do {
-      delete(cursor.getLong(cursor.getColumnIndex(Constants.KEY_UTC)));
-    } while (cursor.moveToNext());
-    cursor.close();
+    long fromUtc = cal.getTimeInMillis();
+    long toUtc = fromUtc + 24L * 3600 * 1000;
+    database.delete(DATABASE_TABLE, Constants.KEY_UTC + ">=" + Long.toString(fromUtc)
+      + " AND " + Constants.KEY_UTC + "<" + Long.toString(toUtc), null);
   }
 
   // TODO: encrypt
