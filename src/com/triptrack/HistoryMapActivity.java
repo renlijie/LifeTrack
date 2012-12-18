@@ -1,16 +1,14 @@
 package com.triptrack;
 
-import java.util.Calendar;
-import java.util.List;
-
 import android.database.Cursor;
+import android.graphics.Canvas;
 import android.graphics.Color;
-import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.Animation.AnimationListener;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -19,12 +17,18 @@ import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
 
+import java.util.Calendar;
+import java.util.List;
+
 public class HistoryMapActivity extends MapActivity {
   private static final String TAG = "HistoryMap";
   private static final String[] strDays = new String[] { "Sun.", "Mon.", "Tue.", "Wed.", "Thu.", "Fri.", "Sat." };
 
   private MapView mapView;
   private TextView dateView;
+  private Button previousDayButton;
+  private Button nextDayButton;
+  private Button allDaysButton;
   private List<Overlay> mapOverlays;
   private Calendar calendar;
   private boolean allDays;
@@ -74,8 +78,6 @@ public class HistoryMapActivity extends MapActivity {
       FixOverlay fixOverlay = (FixOverlay) (mapOverlays.get(mapOverlays.size() - 1));
       fixOverlay.close(); // only close once
       mapOverlays.remove(mapOverlays.size() - 1);
-    } else {
-      mapOverlays = mapView.getOverlays();
     }
     FixOverlay f;
     if(allDays) {
@@ -96,21 +98,6 @@ public class HistoryMapActivity extends MapActivity {
     fixDataStore.close();
 
     if(move) {
-      double lat, lng;
-      if (c.moveToFirst()) {
-        lat = c.getDouble(c.getColumnIndex(Constants.KEY_LAT));
-        lng = c.getDouble(c.getColumnIndex(Constants.KEY_LNG));
-      } else {
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-        if (lastKnownLocation == null) {
-          lat = 0;
-          lng = 0;
-        } else {
-          lat = lastKnownLocation.getLatitude();
-          lng = lastKnownLocation.getLongitude();
-        }
-      }
       double latSpanE6 = f.getLatSpan() * 1E6;
       double lngSpanE6 = f.getLngSpan() * 1E6;
       double cenLatE6 = f.getCenLat() * 1E6;
@@ -121,15 +108,57 @@ public class HistoryMapActivity extends MapActivity {
     }
   }
 
+  private void buttonsFade() {
+    Animation buttonFadeOut = new AlphaAnimation(1.0f, 0.0f);
+
+    buttonFadeOut.setAnimationListener(new AnimationListener(){
+      @Override
+      public void onAnimationEnd(Animation a) {
+        previousDayButton.setVisibility(View.GONE);
+        nextDayButton.setVisibility(View.GONE);
+        allDaysButton.setVisibility(View.GONE);
+        dateView.setVisibility(View.GONE);
+      }
+
+      @Override
+      public void onAnimationRepeat(Animation a) { }
+
+      @Override
+      public void onAnimationStart(Animation a) { }
+    });
+
+    buttonFadeOut.setStartOffset(2000);
+    buttonFadeOut.setDuration(1000);
+    previousDayButton.setAnimation(buttonFadeOut);
+    nextDayButton.setAnimation(buttonFadeOut);
+    allDaysButton.setAnimation(buttonFadeOut);
+    dateView.setAnimation(buttonFadeOut);
+  }
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.map);
 
     mapView = (MapView) findViewById(R.id.mapview);
-    mapView.setBuiltInZoomControls(true);
 
+    previousDayButton = (Button) findViewById(R.id.previous_day);
+    nextDayButton = (Button) findViewById(R.id.next_day);
+    allDaysButton = (Button) findViewById(R.id.all_days);
     dateView = (TextView) findViewById(R.id.date);
+
+    mapOverlays = mapView.getOverlays();
+    mapOverlays.add(new Overlay() {
+      @Override
+      public void draw(Canvas c, MapView mapView, boolean shadow) { }
+
+      @Override
+      public boolean onTap(GeoPoint p, MapView mapView) {
+        buttonsFade();
+        return false;
+      }
+    });
+
     dateView.setTextColor(Color.BLACK);
     dateView.setBackgroundColor(Color.GRAY);
 
@@ -142,31 +171,33 @@ public class HistoryMapActivity extends MapActivity {
     allDays = false;
     prepareRows(0, true, true);
 
-    Button previousDayButton = (Button) findViewById(R.id.previous_day);
     previousDayButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
         allDays = false;
         prepareRows(-1, false, true);
+        buttonsFade();
       }
     });
 
-    Button nextDayButton = (Button) findViewById(R.id.next_day);
     nextDayButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
         allDays = false;
         prepareRows(1, false, true);
+        buttonsFade();
       }
     });
 
-    Button allDaysButton = (Button) findViewById(R.id.all_days);
     allDaysButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
         allDays = true;
         prepareRows(0, false, true);
+        buttonsFade();
       }
     });
+
+    buttonsFade();
   }
 }
