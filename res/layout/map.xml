@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
 
@@ -8,7 +7,7 @@
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/mapview"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="fill_parent"
         android:apiKey="0-VpvGDqGmzDKJRHbDB6TPvtRPJ5A8GNWBccH7A"
         android:clickable="true" />
 
@@ -18,7 +17,7 @@
         android:layout_height="wrap_content"
         android:layout_alignBottom="@id/mapview"
         android:layout_alignRight="@id/mapview"
-        android:text="@+string/next_day" />
+        android:text="@string/next_day" />
 
     <Button
         android:id="@+id/previous_day"
@@ -26,21 +25,61 @@
         android:layout_height="wrap_content"
         android:layout_alignBottom="@id/mapview"
         android:layout_alignLeft="@id/mapview"
-        android:text="@+string/previous_day" />
+        android:text="@string/previous_day" />
+
+    <Button
+        android:id="@+id/set_period"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@id/mapview"
+        android:layout_alignTop="@id/mapview"
+        android:text="@string/set_period" />
 
     <Button
         android:id="@+id/all_days"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignRight="@id/mapview"
+        android:layout_alignLeft="@id/mapview"
         android:layout_alignTop="@id/mapview"
-        android:text="@+string/all_days" />
+        android:visibility="gone"
+        android:text="@string/all_days" />
 
-    <TextView
-        android:id="@+id/date"
+    <Button
+        android:id="@+id/start_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignLeft="@id/mapview"
-        android:layout_alignTop="@id/mapview" />
+        android:layout_alignBottom="@id/mapview"
+        android:visibility="gone"
+        android:text="@string/start_date" />
+
+    <Button
+        android:id="@+id/end_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@id/mapview"
+        android:layout_alignBottom="@id/mapview"
+        android:visibility="gone"
+        android:text="@string/end_date" />
+
+    <TextView
+        android:id="@+id/date"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@id/mapview"
+        android:layout_toLeftOf="@id/set_period"
+        android:layout_alignTop="@id/mapview"
+        android:text="stats" />
+
+    <CalendarView
+        android:id="@+id/calendar"
+        android:focusedMonthDateColor="#fffcca"
+        android:unfocusedMonthDateColor="#0066cc"
+        android:weekDayTextAppearance="@android:style/TextAppearance.Small"
+        android:showWeekNumber="false"
+        android:visibility="gone"
+        android:layout_above="@id/next_day"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
 
 </RelativeLayout>

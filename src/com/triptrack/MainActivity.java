@@ -13,6 +13,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.text.Editable;
@@ -193,7 +194,8 @@ public final class MainActivity extends Activity {
       @Override
       public void onClick(View v) {
         // External file to read.
-        final File file = new File(getExternalFilesDir(null), Constants.HISTORY_FILE);
+        File sdCard = Environment.getExternalStorageDirectory();
+        final File file = new File(sdCard, Constants.HISTORY_FILE);
         // Confirmation dialog.
         new AlertDialog.Builder(MainActivity.this)
           .setMessage(MainActivity.this.getString(R.string.import_confirmation) + "\n" + file)
@@ -263,7 +265,8 @@ public final class MainActivity extends Activity {
         fixDataStore.close();
 
         // File to write.
-        final File file = new File(getExternalFilesDir(null), Constants.HISTORY_FILE);
+        File sdCard = Environment.getExternalStorageDirectory();
+        final File file = new File(sdCard, Constants.HISTORY_FILE);
         // Confirmation dialog.
         new AlertDialog.Builder(MainActivity.this)
           .setMessage(MainActivity.this.getString(
