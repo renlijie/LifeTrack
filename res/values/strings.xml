@@ -43,6 +43,8 @@
     <string name="all_days">all days</string>
     <string name="set_period">set period</string>
     <string name="back">back</string>
+    <string name="start_date">start date</string>
+    <string name="end_date">end date</string>
 
     <string name="about">About</string>
 

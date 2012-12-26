@@ -39,15 +39,35 @@
         android:id="@+id/all_days"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignRight="@id/mapview"
-        android:layout_below="@id/set_period"
+        android:layout_alignLeft="@id/mapview"
+        android:layout_alignTop="@id/mapview"
+        android:visibility="gone"
         android:text="@string/all_days" />
 
-    <TextView
-        android:id="@+id/date"
+    <Button
+        android:id="@+id/start_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignLeft="@id/mapview"
+        android:layout_alignBottom="@id/mapview"
+        android:visibility="gone"
+        android:text="@string/start_date" />
+
+    <Button
+        android:id="@+id/end_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@id/mapview"
+        android:layout_alignBottom="@id/mapview"
+        android:visibility="gone"
+        android:text="@string/end_date" />
+
+    <TextView
+        android:id="@+id/date"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@id/mapview"
+        android:layout_toLeftOf="@id/set_period"
         android:layout_alignTop="@id/mapview"
         android:text="stats" />
 
@@ -55,7 +75,6 @@
         android:id="@+id/calendar"
         android:focusedMonthDateColor="#fffcca"
         android:unfocusedMonthDateColor="#0066cc"
-        android:dateTextAppearance="@android:style/TextAppearance.Large.Inverse"
         android:weekDayTextAppearance="@android:style/TextAppearance.Small"
         android:showWeekNumber="false"
         android:visibility="gone"
