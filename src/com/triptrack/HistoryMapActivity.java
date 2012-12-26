@@ -158,9 +158,15 @@ public class HistoryMapActivity extends MapActivity {
             public void onClick(View view) {
                 if (calendarView.getVisibility() == View.GONE) {
                     calendarView.setVisibility(View.VISIBLE);
+                    mapView.setVisibility(View.INVISIBLE);
+                    periodSetter.setText(R.string.back);
                 }
-                else
+                else {
                     calendarView.setVisibility(View.GONE);
+                    mapView.setVisibility(View.VISIBLE);
+                    periodSetter.setText(R.string.set_period);
+                    buttonsFade();
+                }
             }
         });
 

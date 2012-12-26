@@ -53,10 +53,10 @@
 
     <CalendarView
         android:id="@+id/calendar"
-        android:focusedMonthDateColor="#0066cc"
-        android:unfocusedMonthDateColor="#222222"
-        android:dateTextAppearance="@android:style/TextAppearance.Medium.Inverse"
-        android:weekDayTextAppearance="@android:style/TextAppearance.Medium.Inverse"
+        android:focusedMonthDateColor="#fffcca"
+        android:unfocusedMonthDateColor="#0066cc"
+        android:dateTextAppearance="@android:style/TextAppearance.Large.Inverse"
+        android:weekDayTextAppearance="@android:style/TextAppearance.Small"
         android:showWeekNumber="false"
         android:visibility="gone"
         android:layout_above="@id/next_day"
