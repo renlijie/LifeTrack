@@ -51,4 +51,16 @@
         android:layout_alignTop="@id/mapview"
         android:text="stats" />
 
+    <CalendarView
+        android:id="@+id/calendar"
+        android:focusedMonthDateColor="#0066cc"
+        android:unfocusedMonthDateColor="#222222"
+        android:dateTextAppearance="@android:style/TextAppearance.Medium.Inverse"
+        android:weekDayTextAppearance="@android:style/TextAppearance.Medium.Inverse"
+        android:showWeekNumber="false"
+        android:visibility="gone"
+        android:layout_above="@id/next_day"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+
 </RelativeLayout>
