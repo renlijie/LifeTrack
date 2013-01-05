@@ -1,13 +1,5 @@
 package com.triptrack;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Calendar;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -19,6 +11,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import java.io.*;
+import java.util.Calendar;
+
 public class FixDataStore {
   private static final String TAG = "FixDataStore";
 
@@ -28,7 +23,7 @@ public class FixDataStore {
 
   private final Context context;
 
-  //TODO: add UI handler from MainActivity
+  //TODO: add UI handler from ControlPanelActivity
 
   private DatabaseHelper databaseHelper;
   private SQLiteDatabase database;

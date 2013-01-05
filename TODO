@@ -2,8 +2,8 @@ TODO: (urgent -> not sure)
 
 UI
 ***
+Make color a # of fixes indicator.
 Add animation.
-Make buttons disappear after a short time.
 Add nextFix/prevFix button.
 Add other Google Map modes.
 Show indecisive progress bar while drawing.
@@ -34,6 +34,10 @@ Done: (recent -> old)
 
 UI
 ***
+Make the history map the main activity.
+Dynamically adjust the numeber of fixes drawn.
+Draw more efficiently when the # of fixes is large.
+Make buttons disappear after a short time.
 Auto scale map.
 Show number of fixes drawn.
 Add ItemizedOverlay.

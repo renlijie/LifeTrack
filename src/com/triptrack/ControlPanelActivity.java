@@ -1,14 +1,9 @@
 package com.triptrack;
 
-import java.io.File;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -18,7 +13,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.Editable;
 import android.text.InputType;
-import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
 import android.view.View;
@@ -29,13 +23,17 @@ import android.widget.EditText;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import java.io.File;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+
 /**
  * Activity the user sees when opening the app.
  * @author Lijie Ren
  *
  */
-public final class MainActivity extends Activity {
-  private static final String TAG = "MainActivity";
+public final class ControlPanelActivity extends Activity {
+  private static final String TAG = "ControlPanelActivity";
 
   /**
    * When orientation changes, re-draw the activity without deleting dialogs
@@ -80,12 +78,12 @@ public final class MainActivity extends Activity {
           final int intervalMins = settings.getInt(Constants.INTERVAL_MINS,
             Constants.DEFAULT_INTERVAL_MINS);
           // Start the alarm.
-          AlarmController.startAlarm(MainActivity.this, intervalMins);
+          AlarmController.startAlarm(ControlPanelActivity.this, intervalMins);
         } else {
           // Write the enabling status to SharedPreferences.
           while (!editor.putBoolean(Constants.ENABLED, false).commit());
           // Stop the alarm.
-          AlarmController.stopAlarm(MainActivity.this);
+          AlarmController.stopAlarm(ControlPanelActivity.this);
         }
       }
     });
@@ -100,14 +98,14 @@ public final class MainActivity extends Activity {
           Constants.DEFAULT_INTERVAL_MINS);
 
         // Set an EditText view for setting the interval.
-        final EditText setIntervalET = new EditText(MainActivity.this);
+        final EditText setIntervalET = new EditText(ControlPanelActivity.this);
         setIntervalET.setInputType(InputType.TYPE_CLASS_NUMBER);
         setIntervalET.setText(Integer.toString(intervalMins));
 
         // Display a dialog containing the EditText view.
-        new AlertDialog.Builder(MainActivity.this)
-          .setTitle(MainActivity.this.getString(R.string.set_interval))
-          .setMessage(MainActivity.this.getString(R.string.set_interval_direction))
+        new AlertDialog.Builder(ControlPanelActivity.this)
+          .setTitle(ControlPanelActivity.this.getString(R.string.set_interval))
+          .setMessage(ControlPanelActivity.this.getString(R.string.set_interval_direction))
           .setView(setIntervalET)
           .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override
@@ -121,29 +119,29 @@ public final class MainActivity extends Activity {
                   throw new NumberFormatException();
                 }
               } catch (NumberFormatException e) {
-                Toast.makeText(MainActivity.this,
-                  MainActivity.this.getString(R.string.set_interval_invalid),
+                Toast.makeText(ControlPanelActivity.this,
+                  ControlPanelActivity.this.getString(R.string.set_interval_invalid),
                   Toast.LENGTH_SHORT).show();
                 return;
               }
               // If interval is not changed, return.
               if (newIntervalMins == intervalMins) {
-                Toast.makeText(MainActivity.this,
-                  MainActivity.this.getString(R.string.set_interval_not_changed)
+                Toast.makeText(ControlPanelActivity.this,
+                  ControlPanelActivity.this.getString(R.string.set_interval_not_changed)
                     + " " + Integer.toString(intervalMins) + "mins.",
                   Toast.LENGTH_SHORT).show();
                 return;
               }
               // Write the new interval to SharedPreferences.
               while (!editor.putInt(Constants.INTERVAL_MINS, newIntervalMins).commit());
-              Toast.makeText(MainActivity.this,
-                MainActivity.this.getString(R.string.set_interval_changed)
+              Toast.makeText(ControlPanelActivity.this,
+                ControlPanelActivity.this.getString(R.string.set_interval_changed)
                   + " " + Integer.toString(newIntervalMins) + "mins.",
                 Toast.LENGTH_SHORT).show();
               // If the alarm is activated, restart it with the new interval.
               if (settings.getBoolean(Constants.ENABLED, false)) {
-                AlarmController.stopAlarm(MainActivity.this);
-                AlarmController.startAlarm(MainActivity.this, newIntervalMins);
+                AlarmController.stopAlarm(ControlPanelActivity.this);
+                AlarmController.startAlarm(ControlPanelActivity.this, newIntervalMins);
               }
             }
           })
@@ -157,7 +155,7 @@ public final class MainActivity extends Activity {
     });
 
     // ProgressDialog used in export/import.
-    final ProgressDialog progressBar = new ProgressDialog(MainActivity.this);
+    final ProgressDialog progressBar = new ProgressDialog(ControlPanelActivity.this);
     progressBar.setCancelable(false);
     progressBar.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 
@@ -166,7 +164,7 @@ public final class MainActivity extends Activity {
       public void handleMessage(Message msg) {
         switch (msg.what) {
           case Constants.HANDLER_TOAST: {
-            Toast.makeText(MainActivity.this, (String) msg.obj, Toast.LENGTH_LONG).show();
+            Toast.makeText(ControlPanelActivity.this, (String) msg.obj, Toast.LENGTH_LONG).show();
             break;
           }
           case Constants.HANDLER_PROGRESSBAR_DISMISS: {
@@ -185,7 +183,7 @@ public final class MainActivity extends Activity {
             break;
           }
         }
-      };
+      }
     };
 
     // Button for importing history.
@@ -197,17 +195,17 @@ public final class MainActivity extends Activity {
         File sdCard = Environment.getExternalStorageDirectory();
         final File file = new File(sdCard, Constants.HISTORY_FILE);
         // Confirmation dialog.
-        new AlertDialog.Builder(MainActivity.this)
-          .setMessage(MainActivity.this.getString(R.string.import_confirmation) + "\n" + file)
+        new AlertDialog.Builder(ControlPanelActivity.this)
+          .setMessage(ControlPanelActivity.this.getString(R.string.import_confirmation) + "\n" + file)
           .setCancelable(true)
           .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-              progressBar.setMessage(MainActivity.this.getString(R.string.import_in_progress));
+              progressBar.setMessage(ControlPanelActivity.this.getString(R.string.import_in_progress));
               // Create a thread for importing, which may take a long time.
               new Thread(new Runnable() {
                 public void run() {
-                  final FixDataStore fixDataStore = new FixDataStore(MainActivity.this);
+                  final FixDataStore fixDataStore = new FixDataStore(ControlPanelActivity.this);
                   fixDataStore.open();
                   fixDataStore.importFromFile(file, handler);
                   fixDataStore.close();
@@ -221,8 +219,8 @@ public final class MainActivity extends Activity {
           .setNegativeButton("No", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-              Toast.makeText(MainActivity.this,
-                MainActivity.this.getString(R.string.import_canceled),
+              Toast.makeText(ControlPanelActivity.this,
+                ControlPanelActivity.this.getString(R.string.import_canceled),
                 Toast.LENGTH_SHORT).show();
               dialog.cancel();
             }
@@ -235,7 +233,7 @@ public final class MainActivity extends Activity {
     exportButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
-        FixDataStore fixDataStore = new FixDataStore(MainActivity.this);
+        FixDataStore fixDataStore = new FixDataStore(ControlPanelActivity.this);
         fixDataStore.open();
         Cursor c = fixDataStore.fetchFixes(100);
         String history = "";
@@ -247,12 +245,12 @@ public final class MainActivity extends Activity {
             Calendar calendar = new GregorianCalendar();
             calendar.setTimeInMillis(c.getLong((c.getColumnIndex(Constants.KEY_UTC))));
 
-            res.append(String.format("%02d", (calendar.get(Calendar.MONTH) + 1))
-              + "/" + String.format("%02d", calendar.get(Calendar.DATE)) + ", "
-              + String.format("%02d", calendar.get(Calendar.HOUR_OF_DAY)) + ":"
-              + String.format("%02d", calendar.get(Calendar.MINUTE)) + ":"
-              + String.format("%02d", calendar.get(Calendar.SECOND)) + ", "
-              + c.getFloat(c.getColumnIndex(Constants.KEY_ACC)) + "M\n");
+            res.append(String.format("%02d", (calendar.get(Calendar.MONTH) + 1)))
+                    .append("/").append(String.format("%02d", calendar.get(Calendar.DATE)))
+                    .append(", ").append(String.format("%02d", calendar.get(Calendar.HOUR_OF_DAY)))
+                    .append(":").append(String.format("%02d", calendar.get(Calendar.MINUTE)))
+                    .append(":").append(String.format("%02d", calendar.get(Calendar.SECOND)))
+                    .append(", ").append(c.getFloat(c.getColumnIndex(Constants.KEY_ACC))).append("M\n");
 
             if (c.isLast()) {
               c.close();
@@ -268,18 +266,18 @@ public final class MainActivity extends Activity {
         File sdCard = Environment.getExternalStorageDirectory();
         final File file = new File(sdCard, Constants.HISTORY_FILE);
         // Confirmation dialog.
-        new AlertDialog.Builder(MainActivity.this)
-          .setMessage(MainActivity.this.getString(
+        new AlertDialog.Builder(ControlPanelActivity.this)
+          .setMessage(ControlPanelActivity.this.getString(
             R.string.export_confirmation) + "\n" + file + "\n\n" + history)
           .setCancelable(true)
           .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-              progressBar.setMessage(MainActivity.this.getString(
+              progressBar.setMessage(ControlPanelActivity.this.getString(
                 R.string.export_in_progress));
               // Create a thread for exporting, although it's much faster than importing.
               new Thread(new Runnable() {public void run() {
-                final FixDataStore fixDataStore = new FixDataStore(MainActivity.this);
+                final FixDataStore fixDataStore = new FixDataStore(ControlPanelActivity.this);
                 fixDataStore.open();
                 fixDataStore.exportToFile(file, handler);
                 fixDataStore.close();
@@ -292,7 +290,7 @@ public final class MainActivity extends Activity {
           .setNegativeButton("No", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-              Toast.makeText(MainActivity.this, MainActivity.this.getString(
+              Toast.makeText(ControlPanelActivity.this, ControlPanelActivity.this.getString(
                 R.string.export_canceled), Toast.LENGTH_SHORT).show();
               dialog.cancel();
             }
@@ -306,27 +304,27 @@ public final class MainActivity extends Activity {
       @Override
       public void onClick(View v) {
         // Confirmation dialog.
-        new AlertDialog.Builder(MainActivity.this)
-          .setMessage(MainActivity.this.getString(R.string.clear_confirmation))
+        new AlertDialog.Builder(ControlPanelActivity.this)
+          .setMessage(ControlPanelActivity.this.getString(R.string.clear_confirmation))
           .setCancelable(true)
           .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-              final FixDataStore fixDataStore = new FixDataStore(MainActivity.this);
+              final FixDataStore fixDataStore = new FixDataStore(ControlPanelActivity.this);
               // Clear the history.
               fixDataStore.open();
               fixDataStore.clearHistory();
               fixDataStore.close();
-              Toast.makeText(MainActivity.this,
-                MainActivity.this.getString(R.string.clear_finished),
+              Toast.makeText(ControlPanelActivity.this,
+                ControlPanelActivity.this.getString(R.string.clear_finished),
                 Toast.LENGTH_SHORT).show();
             }
           })
           .setNegativeButton("No", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int id) {
-              Toast.makeText(MainActivity.this,
-                MainActivity.this.getString(R.string.clear_canceled),
+              Toast.makeText(ControlPanelActivity.this,
+                ControlPanelActivity.this.getString(R.string.clear_canceled),
                 Toast.LENGTH_SHORT).show();
               dialog.cancel();
             }
@@ -335,13 +333,12 @@ public final class MainActivity extends Activity {
     });
 
     // Button for showing history on MapActivity.
-    final Button showButton = (Button) findViewById(R.id.show_fixes);
-    showButton.setOnClickListener(new OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        // Create the MapActivity.
-        MainActivity.this.startActivity(new Intent(MainActivity.this, HistoryMapActivity.class));
-      }
+    final Button showMapButton = (Button) findViewById(R.id.show_fixes);
+    showMapButton.setOnClickListener(new OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            ControlPanelActivity.this.finish();
+        }
     });
 
     // Button for showing About information.
@@ -349,7 +346,7 @@ public final class MainActivity extends Activity {
     aboutButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
-        new AlertDialog.Builder(MainActivity.this)
+        new AlertDialog.Builder(ControlPanelActivity.this)
           .setMessage(Constants.ABOUT).setCancelable(true)
           .setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
