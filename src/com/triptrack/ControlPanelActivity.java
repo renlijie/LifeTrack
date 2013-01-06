@@ -56,9 +56,9 @@ public final class ControlPanelActivity extends Activity {
       .getDefaultDisplay();
     final int rotation = display.getRotation();
     if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
-      setContentView(R.layout.main_activity);
+      setContentView(R.layout.control_panel_activity);
     } else {
-      setContentView(R.layout.main_activity_land);
+      setContentView(R.layout.control_panel_activity_land);
     }
 
     // SharedPreferences reader and writer.

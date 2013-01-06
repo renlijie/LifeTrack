@@ -1,7 +1,6 @@
 package com.triptrack;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Canvas;
@@ -25,7 +24,6 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
     private final Cursor c;
 
     private ArrayList<Element> points = new ArrayList<Element>();
-    private Context context;
     private HistoryMapActivity map;
 
     private double maxLat = -90;
@@ -55,9 +53,8 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
         }
     }
 
-    public FixOverlay(Context context, Cursor rows, Calendar calendar, HistoryMapActivity map) {
-        super(boundCenterBottom(context.getResources().getDrawable(R.drawable.marker)));
-        this.context = context;
+    public FixOverlay(Cursor rows, HistoryMapActivity map) {
+        super(boundCenterBottom(map.getResources().getDrawable(R.drawable.marker)));
         this.map = map;
         c = rows;
 
@@ -104,15 +101,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
             if (lat < minLat)
                 minLat = lat;
 
-            if (calendar == null) {
-                // sizeColor
-                colorPosition = (double) index++ / size;
-            } else {
-                // timeColor
-                colorPosition = (double) (utc - calendar.getTimeInMillis()) / (24L * 3600 * 1000);
-            }
-
-            green = (int) (255 * colorPosition);
+            green = (int) (255 * (double) index++ / size);
             points.add(new Element(utc, lat, lng, acc, green));
             lngList.add(lng);
 
@@ -151,7 +140,6 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
 
         cenLat = (minLat + maxLat) / 2;
         latSpan = maxLat - minLat;
-
         populate();
     }
 
@@ -260,7 +248,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
         final Element item = points.get(index);
         Calendar c = new GregorianCalendar();
         c.setTimeInMillis(item.utc);
-        new AlertDialog.Builder(context)
+        new AlertDialog.Builder(map)
                 .setTitle(HistoryMapActivity.printDate(c) + " "
                         + String.format("%02d", c.get(Calendar.HOUR_OF_DAY)) + ":"
                         + String.format("%02d", c.get(Calendar.MINUTE)) + ":"
@@ -272,17 +260,17 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
                 .setPositiveButton("Delete this fix", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        new AlertDialog.Builder(context)
+                        new AlertDialog.Builder(map)
                                 .setTitle("Confirm").setMessage("DELETE?")
                                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int id) {
-                                        FixDataStore fixDataStore = new FixDataStore(context);
+                                        FixDataStore fixDataStore = new FixDataStore(map);
                                         fixDataStore.open();
-                                        fixDataStore.delete(item.utc);
+                                        fixDataStore.deleteSingle(item.utc);
                                         fixDataStore.close();
-                                        map.prepareRows(0, false, false);
-                                        Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
+                                        map.prepareRows(0, false);
+                                        Toast.makeText(map, "deleted!", Toast.LENGTH_SHORT).show();
                                     }
                                 })
                                 .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -297,17 +285,17 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
                 .setNegativeButton("DELETE THIS DAY", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        new AlertDialog.Builder(context)
+                        new AlertDialog.Builder(map)
                                 .setTitle("Confirm").setMessage("DELETE?")
                                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
-                                        FixDataStore fixDataStore = new FixDataStore(context);
+                                        FixDataStore fixDataStore = new FixDataStore(map);
                                         fixDataStore.open();
                                         fixDataStore.deleteDay(item.utc);
                                         fixDataStore.close();
-                                        map.prepareRows(0, false, false);
-                                        Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
+                                        map.prepareRows(0, false);
+                                        Toast.makeText(map, "deleted!", Toast.LENGTH_SHORT).show();
                                     }
                                 })
                                 .setNegativeButton("No", new DialogInterface.OnClickListener() {

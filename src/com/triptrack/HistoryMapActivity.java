@@ -12,6 +12,8 @@ import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.widget.Button;
 import android.widget.CalendarView;
+import android.widget.CompoundButton;
+import android.widget.ToggleButton;
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapView;
@@ -29,13 +31,14 @@ public class HistoryMapActivity extends MapActivity {
     private Button previousDayButton;
     private Button nextDayButton;
     private Button allDaysButton;
-    private Button startDayButton;
-    private Button endDayButton;
+    private ToggleButton startDayButton;
+    private ToggleButton endDayButton;
     private Button settingsButton;
-    private Button backButton;
+    private Button drawButton;
     private CalendarView calendarView;
     private List<Overlay> mapOverlays;
     private Calendar calendar;
+    private Calendar startDay, endDay;
     private boolean allDays;
 
     @Override
@@ -46,12 +49,7 @@ public class HistoryMapActivity extends MapActivity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK && (calendarView.getVisibility() == View.VISIBLE)) {
-            calendarView.setVisibility(View.GONE);
-            mapView.setVisibility(View.VISIBLE);
-            startDayButton.setVisibility(View.GONE);
-            endDayButton.setVisibility(View.GONE);
-            allDaysButton.setVisibility(View.GONE);
-            buttonsFade();
+            showMapPanel();
             return true;
         }
         return super.onKeyDown(keyCode, event);
@@ -68,7 +66,30 @@ public class HistoryMapActivity extends MapActivity {
                 + strDays[calendar.get(Calendar.DAY_OF_WEEK) - 1];
     }
 
-    void prepareRows(int direction, final boolean firstTime, boolean move) {
+    void prepareRows(Calendar startDate, Calendar endDate) {
+        FixDataStore fixDataStore = new FixDataStore(this);
+        fixDataStore.open();
+        Cursor c = fixDataStore.fetchFixes(startDate, endDate);
+        FixOverlay fixOverlay = (FixOverlay) (mapOverlays.get(mapOverlays.size() - 1));
+        fixOverlay.close(); // only close once
+        mapOverlays.remove(mapOverlays.size() - 1);
+        FixOverlay f = new FixOverlay(c, this);
+        mapOverlays.add(f);
+        dateSettingsButton.setText(printDate(startDate) + " ~ " + printDate(endDate)
+                + "\n" + f.numFarAwayFixes() + " out of "
+                + c.getCount() + " fixes.");
+        fixDataStore.close();
+
+        double latSpanE6 = f.getLatSpan() * 1E6;
+        double lngSpanE6 = f.getLngSpan() * 1E6;
+        double cenLatE6 = f.getCenLat() * 1E6;
+        double cenLngE6 = f.getCenLng() * 1E6;
+        mapView.getController().zoomToSpan((int) (latSpanE6 * 1.5), (int) (lngSpanE6 * 1.1));
+        GeoPoint gFix = new GeoPoint((int) (cenLatE6), (int) (cenLngE6));
+        mapView.getController().animateTo(gFix);
+    }
+
+    void prepareRows(int direction, final boolean firstTime) {
         FixDataStore fixDataStore = new FixDataStore(this);
         fixDataStore.open();
 
@@ -100,10 +121,10 @@ public class HistoryMapActivity extends MapActivity {
         }
         FixOverlay f;
         if (allDays) {
-            f = new FixOverlay(this, c, null, this);
+            f = new FixOverlay(c, this);
             mapOverlays.add(f);
         } else {
-            f = new FixOverlay(this, c, calendar, this);
+            f = new FixOverlay(c, this);
             mapOverlays.add(f);
         }
 
@@ -116,15 +137,13 @@ public class HistoryMapActivity extends MapActivity {
         }
         fixDataStore.close();
 
-        if (move) {
-            double latSpanE6 = f.getLatSpan() * 1E6;
-            double lngSpanE6 = f.getLngSpan() * 1E6;
-            double cenLatE6 = f.getCenLat() * 1E6;
-            double cenLngE6 = f.getCenLng() * 1E6;
-            mapView.getController().zoomToSpan((int) (latSpanE6 * 1.5), (int) (lngSpanE6 * 1.1));
-            GeoPoint gFix = new GeoPoint((int) (cenLatE6), (int) (cenLngE6));
-            mapView.getController().animateTo(gFix);
-        }
+        double latSpanE6 = f.getLatSpan() * 1E6;
+        double lngSpanE6 = f.getLngSpan() * 1E6;
+        double cenLatE6 = f.getCenLat() * 1E6;
+        double cenLngE6 = f.getCenLng() * 1E6;
+        mapView.getController().zoomToSpan((int) (latSpanE6 * 1.5), (int) (lngSpanE6 * 1.1));
+        GeoPoint gFix = new GeoPoint((int) (cenLatE6), (int) (cenLngE6));
+        mapView.getController().animateTo(gFix);
     }
 
     private void buttonsFade() {
@@ -133,6 +152,7 @@ public class HistoryMapActivity extends MapActivity {
         buttonFadeOut.setAnimationListener(new AnimationListener() {
             @Override
             public void onAnimationEnd(Animation a) {
+                settingsButton.setVisibility(View.INVISIBLE);
                 previousDayButton.setVisibility(View.INVISIBLE);
                 nextDayButton.setVisibility(View.INVISIBLE);
                 dateSettingsButton.setVisibility(View.GONE);
@@ -150,15 +170,41 @@ public class HistoryMapActivity extends MapActivity {
         buttonFadeOut.setStartOffset(2000);
         buttonFadeOut.setDuration(1000);
 
+        settingsButton.setAnimation(buttonFadeOut);
         previousDayButton.setAnimation(buttonFadeOut);
         nextDayButton.setAnimation(buttonFadeOut);
         dateSettingsButton.setAnimation(buttonFadeOut);
     }
 
+    private void showMapPanel() {
+        calendarView.setVisibility(View.GONE);
+        allDaysButton.setVisibility(View.GONE);
+        startDayButton.setVisibility(View.GONE);
+        endDayButton.setVisibility(View.GONE);
+        mapView.setVisibility(View.VISIBLE);
+        drawButton.setVisibility(View.GONE);
+        settingsButton.setVisibility(View.VISIBLE);
+        buttonsFade();
+    }
+
+    private void showCalendarPanel() {
+        settingsButton.clearAnimation();
+        previousDayButton.clearAnimation();
+        nextDayButton.clearAnimation();
+        dateSettingsButton.clearAnimation();
+        calendarView.setVisibility(View.VISIBLE);
+        allDaysButton.setVisibility(View.VISIBLE);
+        startDayButton.setVisibility(View.VISIBLE);
+        endDayButton.setVisibility(View.VISIBLE);
+        mapView.setVisibility(View.INVISIBLE);
+        settingsButton.setVisibility(View.GONE);
+        drawButton.setVisibility(View.VISIBLE);
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.map);
+        setContentView(R.layout.history_map_activity);
 
         mapView = (MapView) findViewById(R.id.mapview);
 
@@ -166,46 +212,50 @@ public class HistoryMapActivity extends MapActivity {
         nextDayButton = (Button) findViewById(R.id.next_day);
         allDaysButton = (Button) findViewById(R.id.all_days);
         dateSettingsButton = (Button) findViewById(R.id.date_settings);
-        startDayButton = (Button) findViewById(R.id.start_date);
+        startDayButton = (ToggleButton) findViewById(R.id.start_date);
+        startDayButton.setChecked(true);
+        endDayButton = (ToggleButton) findViewById(R.id.end_date);
+        endDayButton.setChecked(false);
         settingsButton = (Button) findViewById(R.id.settings);
-        endDayButton = (Button) findViewById(R.id.end_date);
-        backButton = (Button) findViewById(R.id.back);
+        drawButton = (Button) findViewById(R.id.draw);
         calendarView = (CalendarView) findViewById(R.id.calendar);
+
+        calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
+            @Override
+            public void onSelectedDayChange(CalendarView view, int year, int month, int dayOfMonth) {
+                if(startDayButton.isChecked()) {
+                    allDays = false;
+                    startDay.set(Calendar.YEAR, year);
+                    startDay.set(Calendar.MONTH, month);
+                    startDay.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                    if (!endDay.after(startDay)) {
+                        endDay.setTime(startDay.getTime());
+                    }
+                } else if(endDayButton.isChecked()) {
+                    allDays = false;
+                    endDay.set(Calendar.YEAR, year);
+                    endDay.set(Calendar.MONTH, month);
+                    endDay.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                    if (!endDay.after(startDay)) {
+                        endDay.setTime(startDay.getTime());
+                    }
+                }
+            }
+        });
 
         settingsButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                HistoryMapActivity.this.startActivity(new Intent(HistoryMapActivity.this, ControlPanelActivity.class));
+                HistoryMapActivity.this.startActivity(
+                        new Intent(HistoryMapActivity.this, ControlPanelActivity.class));
             }
         });
 
         dateSettingsButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                previousDayButton.clearAnimation();
-                nextDayButton.clearAnimation();
-                dateSettingsButton.clearAnimation();
-                calendarView.setVisibility(View.VISIBLE);
-                allDaysButton.setVisibility(View.VISIBLE);
-                startDayButton.setVisibility(View.VISIBLE);
-                endDayButton.setVisibility(View.VISIBLE);
-                mapView.setVisibility(View.INVISIBLE);
-                settingsButton.setVisibility(View.GONE);
-                backButton.setVisibility(View.VISIBLE);
+                showCalendarPanel();
             }
-        });
-
-        backButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                calendarView.setVisibility(View.GONE);
-                allDaysButton.setVisibility(View.GONE);
-                startDayButton.setVisibility(View.GONE);
-                endDayButton.setVisibility(View.GONE);
-                mapView.setVisibility(View.VISIBLE);
-                backButton.setVisibility(View.GONE);
-                settingsButton.setVisibility(View.VISIBLE);
-                buttonsFade();            }
         });
 
         mapOverlays = mapView.getOverlays();
@@ -227,14 +277,20 @@ public class HistoryMapActivity extends MapActivity {
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
+        startDay = Calendar.getInstance(calendar.getTimeZone());
+        startDay.setTime(calendar.getTime());
+
+        endDay = Calendar.getInstance(calendar.getTimeZone());
+        endDay.setTime(calendar.getTime());
+
         allDays = false;
-        prepareRows(0, true, true);
+        prepareRows(0, true);
 
         previousDayButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 allDays = false;
-                prepareRows(-1, false, true);
+                prepareRows(-1, false);
                 buttonsFade();
             }
         });
@@ -243,7 +299,7 @@ public class HistoryMapActivity extends MapActivity {
             @Override
             public void onClick(View v) {
                 allDays = false;
-                prepareRows(1, false, true);
+                prepareRows(1, false);
                 buttonsFade();
             }
         });
@@ -252,13 +308,30 @@ public class HistoryMapActivity extends MapActivity {
             @Override
             public void onClick(View v) {
                 allDays = true;
-                calendarView.setVisibility(View.GONE);
-                mapView.setVisibility(View.VISIBLE);
-                startDayButton.setVisibility(View.GONE);
-                endDayButton.setVisibility(View.GONE);
-                allDaysButton.setVisibility(View.GONE);
-                prepareRows(0, false, true);
-                buttonsFade();
+                prepareRows(0, false);
+                showMapPanel();
+            }
+        });
+
+        drawButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showMapPanel();
+                prepareRows(startDay, endDay);
+            }
+        });
+
+        startDayButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                endDayButton.setChecked(!startDayButton.isChecked());
+            }
+        });
+
+        endDayButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                startDayButton.setChecked(!endDayButton.isChecked());
             }
         });
 
