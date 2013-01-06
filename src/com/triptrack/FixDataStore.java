@@ -11,7 +11,13 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Calendar;
 
 public class FixDataStore {
@@ -368,38 +374,21 @@ public class FixDataStore {
                 Integer.toString(size));
     }
 
-    /**
-     * Return all fixes within 24 hours of the second that calendar points to.
-     *
-     * @param calendar
-     * @return
-     */
-    public Cursor fetchFixes(Calendar calendar) {
-        if (calendar == null) {
-            return database.query(DATABASE_TABLE,
-                    new String[]{Constants.KEY_UTC, Constants.KEY_LAT,
-                            Constants.KEY_LNG, Constants.KEY_ACC},
-                    null, null, null, null, Constants.KEY_UTC + " DESC", null);
-        }
-
-        long startMillis = calendar.getTimeInMillis();
-        long endMillis = startMillis + 24L * 3600 * 1000 - 1;
+    public Cursor fetchFixes(Calendar startDay, Calendar endDay) {
+        long startMillis, endMillis;
+        if (startDay != null)
+            startMillis = startDay.getTimeInMillis();
+        else
+            startMillis = Long.MIN_VALUE;
+        if (endDay != null)
+            endMillis = endDay.getTimeInMillis() + 24L * 3600 * 1000 - 1;
+        else
+            endMillis = Long.MAX_VALUE;
 
         return database.query(DATABASE_TABLE,
                 new String[]{Constants.KEY_UTC, Constants.KEY_LAT,
                         Constants.KEY_LNG, Constants.KEY_ACC},
-                Constants.KEY_UTC + " BETWEEN ? AND ?",
-                new String[]{Long.toString(startMillis), Long.toString(endMillis)},
-                null, null, Constants.KEY_UTC + " DESC", null);
-    }
-
-    public Cursor fetchFixes(Calendar fromDay, Calendar toDay) {
-        long startMillis = fromDay.getTimeInMillis();
-        long endMillis = toDay.getTimeInMillis() + 24L * 3600 * 1000 - 1;
-        return database.query(DATABASE_TABLE,
-                new String[]{Constants.KEY_UTC, Constants.KEY_LAT,
-                        Constants.KEY_LNG, Constants.KEY_ACC},
-                Constants.KEY_UTC + " BETWEEN ? AND ?",
+                Constants.KEY_UTC + " BETWEEN ? AND ?", // inclusive
                 new String[]{Long.toString(startMillis), Long.toString(endMillis)},
                 null, null, Constants.KEY_UTC + " DESC", null);
     }

@@ -38,11 +38,14 @@
     <string name="show_history">Show my history</string>
     <string name="previous_day">previous day</string>
     <string name="next_day">next day</string>
-    <string name="all_days">all days</string>
+    <string name="draw_markers">markers</string>
+    <string name="no_markers">markers</string>
+
+    <string name="unbounded_date">Unbounded/Today</string>
     <string name="settings">settings</string>
     <string name="draw">DRAW</string>
-    <string name="start_date">start date</string>
-    <string name="end_date">end date</string>
+    <string name="first_day">first day</string>
+    <string name="last_day">last day</string>
 
     <string name="about">About</string>
 
