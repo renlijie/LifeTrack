@@ -3,7 +3,7 @@
 <resources>
 
     <!-- shown as app name -->
-    <string name="app_name">LifeTrack</string>
+    <string name="app_name">TripTrack</string>
 
     <string name="start_repeating_alarm">Start recording my locations!</string>
     <string name="stop_repeating_alarm">Stop recording my locations!</string>

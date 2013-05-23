@@ -68,7 +68,7 @@ public final class Constants {
   static final String ABOUT =
     "Ever find yourself too lazy to keep records of where you have been on your amazing trip while you really should?\n\n" +
 
-    "LifeTrack is designed just for doing that " + "\u2014" + " automatically!\n\n" +
+    "TripTrack is designed just for doing that " + "\u2014" + " automatically!\n\n" +
 
     "By periodically sampling your fine/coarse locations found by exploiting the GPS, WiFi and cell-tower signals, " +
     "this app keeps a record of your \"life track\" during the time it is enabled, power efficiently.\n\n" +
@@ -78,7 +78,7 @@ public final class Constants {
     "1) Automatically chooses the best accuracy available.\n\n" +
 
     "2) Makes use of very little system resources and is very power efficient (especially when GPS is turned off). " +
-    "   Simply enable it and leave it on for days, months, or even years!\n\n" +
+    "   Simply enable it and leave it on for days, months, or even years to create your own \"life track\"!\n\n" +
 
     "3) Supports user defined sampling frequency.\n\n" +
 
