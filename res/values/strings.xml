@@ -36,8 +36,8 @@
     <string name="clear_finished">History cleared.</string>
 
     <string name="show_history">Show my history</string>
-    <string name="previous_day">previous day</string>
-    <string name="next_day">next day</string>
+    <string name="previous_day">-1 day</string>
+    <string name="next_day">+1 day</string>
     <string name="draw_markers">markers</string>
     <string name="no_markers">markers</string>
 
