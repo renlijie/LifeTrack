@@ -1,4 +1,4 @@
-package com.lifetrack;
+package com.triptrack;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;

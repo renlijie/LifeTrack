@@ -1,4 +1,4 @@
-package com.lifetrack;
+package com.triptrack;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -27,11 +27,7 @@ import java.io.File;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-/**
- * Activity the user sees when opening the app.
- * @author Lijie Ren
- *
- */
+
 public final class ControlPanelActivity extends Activity {
   private static final String TAG = "ControlPanelActivity";
 

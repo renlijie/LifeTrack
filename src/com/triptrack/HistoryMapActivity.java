@@ -1,4 +1,4 @@
-package com.lifetrack;
+package com.triptrack;
 
 import android.content.Intent;
 import android.database.Cursor;
@@ -22,6 +22,12 @@ import com.google.android.maps.Overlay;
 
 import java.util.Calendar;
 import java.util.List;
+
+/**
+ * Activity the user sees when opening the app.
+ * @author Lijie Ren
+ *
+ */
 
 public class HistoryMapActivity extends MapActivity {
     private static final String TAG = "HistoryMap";
@@ -95,7 +101,7 @@ public class HistoryMapActivity extends MapActivity {
         mapOverlays.add(f);
         dateSettingsButton.setText(CalendarHelper.prettyInterval(firstDay, lastDay)
                 + "\n" + f.numFarAwayFixes() + " out of "
-                + c.getCount() + " fixes.");
+                + c.getCount());
         zoomToFit(f);
     }
 
@@ -171,7 +177,7 @@ public class HistoryMapActivity extends MapActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.history_map_activity);
+        setContentView(com.triptrack.R.layout.history_map_activity);
 
         fixDataStore.open();
 

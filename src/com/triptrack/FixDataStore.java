@@ -1,4 +1,4 @@
-package com.lifetrack;
+package com.triptrack;
 
 import android.content.ContentValues;
 import android.content.Context;
