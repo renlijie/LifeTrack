@@ -23,7 +23,7 @@ import java.util.Calendar;
 public class FixDataStore {
     private static final String TAG = "FixDataStore";
 
-    private static final String DATABASE_NAME = "lifetrack";
+    private static final String DATABASE_NAME = "triptrack";
     private static final String DATABASE_TABLE = "fixes";
     private static final int DATABASE_VERSION = 4;
 

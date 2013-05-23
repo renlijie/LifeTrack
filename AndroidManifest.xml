@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.lifetrack"
+    package="com.triptrack"
     android:versionCode="6"
     android:versionName="2012.12.26" >
 
