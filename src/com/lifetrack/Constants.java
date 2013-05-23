@@ -7,7 +7,7 @@ public final class Constants {
   /**
    * application-level tag
    */
-  static final String TAG = "TripTrackLog";
+  static final String TAG = "LifeTrackLog";
 
   /**
    * default sampling interval
@@ -68,17 +68,17 @@ public final class Constants {
   static final String ABOUT =
     "Ever find yourself too lazy to keep records of where you have been on your amazing trip while you really should?\n\n" +
 
-    "TripTrack is designed just for doing that " + "\u2014" + " automatically!\n\n" +
+    "LifeTrack is designed just for doing that " + "\u2014" + " automatically!\n\n" +
 
     "By periodically sampling your fine/coarse locations found by exploiting the GPS, WiFi and cell-tower signals, " +
-    "this app keeps a record of your \"trip track\" during the time it is enabled, power efficiently.\n\n" +
+    "this app keeps a record of your \"life track\" during the time it is enabled, power efficiently.\n\n" +
 
     "The highlight of this application include:\n\n" +
 
     "1) Automatically chooses the best accuracy available.\n\n" +
 
     "2) Makes use of very little system resources and is very power efficient (especially when GPS is turned off). " +
-    "   Simply enable it and leave it on for days, months, or even years to create your long term \"life track\"!\n\n" +
+    "   Simply enable it and leave it on for days, months, or even years!\n\n" +
 
     "3) Supports user defined sampling frequency.\n\n" +
 
