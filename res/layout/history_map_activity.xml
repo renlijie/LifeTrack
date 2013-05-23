@@ -44,12 +44,8 @@
         android:text="@string/next_day" />
 
     <!-- calendar dashboard: invisible by default -->
-    <CalendarView
+    <com.squareup.timessquare.CalendarPickerView
         android:id="@+id/calendar"
-        android:focusedMonthDateColor="#fffcca"
-        android:unfocusedMonthDateColor="#0066cc"
-        android:weekDayTextAppearance="@android:style/TextAppearance.Small"
-        android:showWeekNumber="false"
         android:visibility="gone"
         android:layout_above="@id/next_day"
         android:layout_width="fill_parent"

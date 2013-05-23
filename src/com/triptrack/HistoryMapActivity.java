@@ -19,8 +19,11 @@ import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapActivity;
 import com.google.android.maps.MapView;
 import com.google.android.maps.Overlay;
+import com.squareup.timessquare.CalendarPickerView;
+import com.squareup.timessquare.CalendarPickerView.OnDateSelectedListener;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -40,7 +43,7 @@ public class HistoryMapActivity extends MapActivity {
     private Button nextDayButton;
 
     // Calendar Panel
-    private CalendarView calendarView;
+    private CalendarPickerView calendarView;
     private ToggleButton markersButton;
     private Button unboundedDateButton;
     private Button drawButton;
@@ -187,7 +190,11 @@ public class HistoryMapActivity extends MapActivity {
         previousDayButton = (Button) findViewById(R.id.previous_day);
         nextDayButton = (Button) findViewById(R.id.next_day);
 
-        calendarView = (CalendarView) findViewById(R.id.calendar);
+        calendarView = (CalendarPickerView) findViewById(R.id.calendar);
+        Date zero = new Date();
+        zero.setTime(1);
+        calendarView.init(zero, new Date());
+
         markersButton = (ToggleButton) findViewById(R.id.draw_markers);
         markersButton.setChecked(false);
         unboundedDateButton = (Button) findViewById(R.id.unbounded_date);
@@ -256,22 +263,23 @@ public class HistoryMapActivity extends MapActivity {
             }
         });
 
-        calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
+
+        calendarView.setOnDateSelectedListener(new OnDateSelectedListener() {
             @Override
-            public void onSelectedDayChange(CalendarView view, int year, int month, int dayOfMonth) {
+            public void onDateSelected(Date date) {
                 if (firstDayButton.isChecked()) {
-                    firstDay.set(Calendar.YEAR, year);
-                    firstDay.set(Calendar.MONTH, month);
-                    firstDay.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                    firstDay.set(Calendar.YEAR, 2013);
+                    firstDay.set(Calendar.MONTH, 2);
+                    firstDay.set(Calendar.DAY_OF_MONTH, 3);
                     if (!lastDay.after(firstDay)) {
                         lastDay.setTime(firstDay.getTime());
                     }
                     Toast.makeText(HistoryMapActivity.this,
                             CalendarHelper.prettyInterval(firstDay, lastDay), Toast.LENGTH_SHORT).show();
                 } else {
-                    lastDay.set(Calendar.YEAR, year);
-                    lastDay.set(Calendar.MONTH, month);
-                    lastDay.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                    lastDay.set(Calendar.YEAR, 2013);
+                    lastDay.set(Calendar.MONTH, 2);
+                    lastDay.set(Calendar.DAY_OF_MONTH, 3);
                     if (!lastDay.after(firstDay)) {
                         firstDay.setTime(lastDay.getTime());
                     }
