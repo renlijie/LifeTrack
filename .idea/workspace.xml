@@ -12,7 +12,11 @@
     </option>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="87109aa7-d293-4163-957c-49c9d992a73a" name="Default" comment="" />
+    <list default="true" id="87109aa7-d293-4163-957c-49c9d992a73a" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/project.properties" afterPath="$PROJECT_DIR$/project.properties" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+    </list>
     <ignored path="LifeTrack.iws" />
     <ignored path=".idea/workspace.xml" />
     <file path="/Dummy.txt" changelist="87109aa7-d293-4163-957c-49c9d992a73a" time="1369294172435" ignored="false" />
@@ -1010,8 +1014,6 @@
     <file path="$USER_HOME$/android-sdk-macosx/platforms/android-17/data/res/values-xlarge-land/dimens.xml" changelist="87109aa7-d293-4163-957c-49c9d992a73a" time="1369284780396" ignored="false" />
     <file path="/strings.xml" changelist="87109aa7-d293-4163-957c-49c9d992a73a" time="1369285365326" ignored="false" />
     <file path="/history_map_activity.xml" changelist="87109aa7-d293-4163-957c-49c9d992a73a" time="1369286028530" ignored="false" />
-    <file path="$PROJECT_DIR$/.idea/modules.xml" changelist="87109aa7-d293-4163-957c-49c9d992a73a" time="1369292847416" ignored="false" />
-    <file path="$PROJECT_DIR$/.idea/workspace.xml" changelist="87109aa7-d293-4163-957c-49c9d992a73a" time="1369294181475" ignored="false" />
     <file path="$PROJECT_DIR$/../android-times-square/res/layout/main.xml" changelist="87109aa7-d293-4163-957c-49c9d992a73a" time="1369291330083" ignored="false" />
     <file path="$PROJECT_DIR$/.idea/vcs.xml" changelist="87109aa7-d293-4163-957c-49c9d992a73a" time="1369291785128" ignored="false" />
     <file path="$PROJECT_DIR$/../android-times-square/library/gen/com/example/library/BuildConfig.java" changelist="87109aa7-d293-4163-957c-49c9d992a73a" time="1369291853475" ignored="false" />
@@ -1318,6 +1320,20 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
+              <option name="myItemId" value="library" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="LifeTrack" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="LifeTrack" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
               <option name="myItemId" value="gen" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
@@ -1348,12 +1364,6 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
-          <PATH>
-            <PATH_ELEMENT>
-              <option name="myItemId" value="LifeTrack" />
-              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
-            </PATH_ELEMENT>
-          </PATH>
         </subPane>
       </pane>
       <pane id="PackagesPane" />
@@ -1368,7 +1378,7 @@
     <property name="MemberChooser.sorted" value="false" />
     <property name="options.lastSelected" value="preferences.keymap" />
     <property name="recentsLimit" value="5" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../android-times-square/library" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/library" />
     <property name="project.structure.side.proportion" value="0.2" />
     <property name="MemberChooser.copyJavadoc" value="false" />
     <property name="GoToClass.toSaveIncludeLibraries" value="false" />
