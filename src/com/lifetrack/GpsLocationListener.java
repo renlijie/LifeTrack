@@ -1,15 +1,15 @@
-package com.triptrack;
+package com.lifetrack;
 
 import android.location.Location;
 import android.location.LocationManager;
 import android.util.Log;
 
-class WifiLocationListener extends BaseLocationListener {
-  private static final String TAG = "WifiLocationListener";
+class GpsLocationListener extends BaseLocationListener {
+  public static final String TAG = "GpsLocationListener";
 
-  public WifiLocationListener(LocationSampler locationSampler,
-                              LocationManager locationManager,
-                              int timeoutSec) {
+  public GpsLocationListener(LocationSampler locationSampler,
+                             LocationManager locationManager,
+                             int timeoutSec) {
     super(locationSampler, locationManager, timeoutSec);
   }
 
@@ -19,9 +19,9 @@ class WifiLocationListener extends BaseLocationListener {
       Log.w(Constants.TAG + ":" + TAG, "location is null!");
       return;
     }
-    if (location.getAccuracy() > Constants.WIFI_MIN_ACCURACY) {
+    if (location.getAccuracy() > Constants.GPS_MIN_ACCURACY) {
       Log.d(Constants.TAG + ":" + TAG,
-            "WiFi accuracy too low: " + location.getAccuracy());
+            "GPS accuracy too low: " + location.getAccuracy());
       return;
     }
     locationManager.removeUpdates(this);

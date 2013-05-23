@@ -1,4 +1,4 @@
-package com.triptrack;
+package com.lifetrack;
 
 import android.content.Context;
 import android.content.Intent;

@@ -1,4 +1,4 @@
-package com.triptrack;
+package com.lifetrack;
 
 import android.content.Intent;
 import android.database.Cursor;

@@ -1,4 +1,4 @@
-package com.triptrack;
+package com.lifetrack;
 
 import android.app.Activity;
 import android.app.AlertDialog;

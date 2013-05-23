@@ -1,4 +1,4 @@
-package com.triptrack;
+package com.lifetrack;
 
 import android.location.LocationManager;
 import android.util.Log;
