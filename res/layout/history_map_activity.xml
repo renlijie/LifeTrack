@@ -55,13 +55,12 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
 
-    <ToggleButton
-        android:id="@+id/draw_markers"
+    <Button
+        android:id="@+id/unbounded_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textOff="@string/draw_markers"
-        android:textOn="@string/no_markers"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:text="@string/unbounded_date" />
 
     <Button
         android:id="@+id/draw"
@@ -88,13 +87,14 @@
             android:textOff="@string/first_day"
             android:textOn="@string/first_day" />
 
-        <Button
-            android:id="@+id/unbounded_date"
+        <ToggleButton
+            android:id="@+id/draw_markers"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight=".4"
-            android:visibility="gone"
-            android:text="@string/unbounded_date" />
+            android:textOff="@string/draw_markers"
+            android:textOn="@string/no_markers"
+            android:visibility="gone" />
 
         <ToggleButton
             android:id="@+id/last_day"
