@@ -11,7 +11,6 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.widget.Button;
-import android.widget.CalendarView;
 import android.widget.CompoundButton;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -127,6 +126,7 @@ public class HistoryMapActivity extends MapActivity {
                 settingsButton.setVisibility(View.INVISIBLE);
                 previousDayButton.setVisibility(View.INVISIBLE);
                 nextDayButton.setVisibility(View.INVISIBLE);
+                markersButton.setVisibility(View.INVISIBLE);
                 dateSettingsButton.setVisibility(View.GONE);
             }
 
@@ -145,6 +145,7 @@ public class HistoryMapActivity extends MapActivity {
         settingsButton.setAnimation(buttonFadeOut);
         previousDayButton.setAnimation(buttonFadeOut);
         nextDayButton.setAnimation(buttonFadeOut);
+        markersButton.setAnimation(buttonFadeOut);
         dateSettingsButton.setAnimation(buttonFadeOut);
     }
 
@@ -165,12 +166,12 @@ public class HistoryMapActivity extends MapActivity {
         settingsButton.clearAnimation();
         previousDayButton.clearAnimation();
         nextDayButton.clearAnimation();
+        markersButton.clearAnimation();
 
         mapView.setVisibility(View.INVISIBLE);
         settingsButton.setVisibility(View.GONE);
 
         calendarView.setVisibility(View.VISIBLE);
-        markersButton.setVisibility(View.VISIBLE);
         unboundedDateButton.setVisibility(View.VISIBLE);
         drawButton.setVisibility(View.VISIBLE);
         firstDayButton.setVisibility(View.VISIBLE);
@@ -189,13 +190,13 @@ public class HistoryMapActivity extends MapActivity {
         settingsButton = (Button) findViewById(R.id.settings);
         previousDayButton = (Button) findViewById(R.id.previous_day);
         nextDayButton = (Button) findViewById(R.id.next_day);
+        markersButton = (ToggleButton) findViewById(R.id.draw_markers);
 
         calendarView = (CalendarPickerView) findViewById(R.id.calendar);
         Date zero = new Date();
         zero.setTime(1);
         calendarView.init(zero, new Date());
 
-        markersButton = (ToggleButton) findViewById(R.id.draw_markers);
         markersButton.setChecked(false);
         unboundedDateButton = (Button) findViewById(R.id.unbounded_date);
         drawButton = (Button) findViewById(R.id.draw);
@@ -247,6 +248,14 @@ public class HistoryMapActivity extends MapActivity {
             }
         });
 
+        markersButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                prepareDates(0, markersButton.isChecked());
+                buttonsFade();
+            }
+        });
+
         previousDayButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -268,18 +277,18 @@ public class HistoryMapActivity extends MapActivity {
             @Override
             public void onDateSelected(Date date) {
                 if (firstDayButton.isChecked()) {
-                    firstDay.set(Calendar.YEAR, 2013);
-                    firstDay.set(Calendar.MONTH, 2);
-                    firstDay.set(Calendar.DAY_OF_MONTH, 3);
+                    firstDay.setTime(date);
+                    lastDayButton.setChecked(true);
+                    firstDayButton.setChecked(false);
                     if (!lastDay.after(firstDay)) {
                         lastDay.setTime(firstDay.getTime());
                     }
                     Toast.makeText(HistoryMapActivity.this,
                             CalendarHelper.prettyInterval(firstDay, lastDay), Toast.LENGTH_SHORT).show();
                 } else {
-                    lastDay.set(Calendar.YEAR, 2013);
-                    lastDay.set(Calendar.MONTH, 2);
-                    lastDay.set(Calendar.DAY_OF_MONTH, 3);
+                    lastDay.setTime(date);
+                    firstDayButton.setChecked(true);
+                    lastDayButton.setChecked(false);
                     if (!lastDay.after(firstDay)) {
                         firstDay.setTime(lastDay.getTime());
                     }

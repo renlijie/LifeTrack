@@ -2,12 +2,12 @@ package com.triptrack;
 
 public final class Constants {
 
-  // ------------------- in use-----------------------
+  // ------------------- in use -----------------------
 
   /**
    * application-level tag
    */
-  static final String TAG = "LifeTrackLog";
+  static final String TAG = "TripTrackLog";
 
   /**
    * default sampling interval
@@ -95,6 +95,6 @@ public final class Constants {
     "Author: Lijie Ren \n" +
     "(lijie.project@gmail.com)";
 
-  // ----------------- not in use---------------------
+  // ----------------- not in use ---------------------
 
 }

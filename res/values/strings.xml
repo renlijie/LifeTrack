@@ -38,12 +38,12 @@
     <string name="show_history">Show my history</string>
     <string name="previous_day">-1 day</string>
     <string name="next_day">+1 day</string>
-    <string name="draw_markers">markers</string>
-    <string name="no_markers">markers</string>
+    <string name="draw_markers">no markers</string>
+    <string name="no_markers">show markers</string>
 
     <string name="unbounded_date">+\u221E/-\u221E</string>
     <string name="settings">settings</string>
-    <string name="draw">DRAW</string>
+    <string name="draw">Show</string>
     <string name="first_day">from</string>
     <string name="last_day">to</string>
 

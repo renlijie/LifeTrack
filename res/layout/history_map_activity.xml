@@ -12,42 +12,55 @@
         android:apiKey="0-VpvGDqGmzDKJRHbDB6TPvtRPJ5A8GNWBccH7A"
         android:clickable="true" />
 
-    <Button
-        android:id="@+id/date_settings"
-        android:layout_width="200dp"
-        android:layout_height="80dp"
-        android:layout_alignLeft="@id/mapview"
-        android:layout_alignTop="@id/mapview" />
 
     <Button
         android:id="@+id/settings"
-        android:layout_width="wrap_content"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
-        android:layout_alignRight="@id/mapview"
+        android:layout_alignLeft="@id/mapview"
         android:layout_alignTop="@id/mapview"
         android:text="@string/settings" />
 
+    <ToggleButton
+        android:id="@+id/draw_markers"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_alignRight="@id/mapview"
+        android:layout_alignTop="@id/mapview"
+        android:textOff="@string/draw_markers"
+        android:textOn="@string/no_markers" />
+
     <Button
         android:id="@+id/previous_day"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="80dp"
         android:layout_alignBottom="@id/mapview"
         android:layout_alignLeft="@id/mapview"
+        android:layout_height="wrap_content"
         android:text="@string/previous_day" />
 
     <Button
         android:id="@+id/next_day"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="80dp"
         android:layout_alignBottom="@id/mapview"
         android:layout_alignRight="@id/mapview"
+        android:layout_height="wrap_content"
         android:text="@string/next_day" />
+
+    <Button
+        android:id="@+id/date_settings"
+        android:layout_height="80dp"
+        android:layout_width="wrap_content"
+        android:layout_alignBottom="@id/mapview"
+        android:layout_toRightOf="@id/previous_day"
+        android:layout_toLeftOf="@id/next_day" />
+
 
     <!-- calendar dashboard: invisible by default -->
     <com.squareup.timessquare.CalendarPickerView
         android:id="@+id/calendar"
         android:visibility="gone"
         android:layout_above="@id/next_day"
+        android:layout_below="@id/settings"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
 
@@ -83,14 +96,7 @@
             android:textOff="@string/first_day"
             android:textOn="@string/first_day" />
 
-        <ToggleButton
-            android:id="@+id/draw_markers"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight=".4"
-            android:textOff="@string/draw_markers"
-            android:textOn="@string/no_markers"
-            android:visibility="gone" />
+
 
         <ToggleButton
             android:id="@+id/last_day"
