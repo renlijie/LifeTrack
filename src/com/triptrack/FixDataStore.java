@@ -320,10 +320,7 @@ public class FixDataStore {
     public void deleteDay(long utc) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(utc);
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
+        CalendarHelper.toBeginningOfDay(cal);
 
         long fromUtc = cal.getTimeInMillis();
         long toUtc = fromUtc + 24L * 3600 * 1000;
@@ -393,14 +390,14 @@ public class FixDataStore {
                 null, null, Constants.KEY_UTC + " DESC", null);
     }
 
-    public Calendar previousRecordDay(Calendar calendar) {
+    private Calendar prevNextDescAsc(Calendar calendar, boolean prev, boolean desc) {
         Cursor cursor =
                 database.query(DATABASE_TABLE,
                         new String[]{Constants.KEY_UTC, Constants.KEY_LAT,
                                 Constants.KEY_LNG, Constants.KEY_ACC},
-                        Constants.KEY_UTC + " < ?",
-                        new String[]{Long.toString(calendar.getTimeInMillis())},
-                        null, null, Constants.KEY_UTC + " DESC", "1");
+                        Constants.KEY_UTC + (prev? " < ?": " >= ?"),
+                        new String[]{Long.toString(calendar.getTimeInMillis() + (prev? 0: (24L * 3600 * 1000)))},
+                        null, null, Constants.KEY_UTC + (desc? " DESC": " ASC"), "1");
         if (cursor.getCount() == 0) {
             cursor.close();
             return null;
@@ -408,36 +405,41 @@ public class FixDataStore {
             cursor.moveToFirst();
             Calendar cal = Calendar.getInstance();
             cal.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(Constants.KEY_UTC)));
-            cal.set(Calendar.HOUR_OF_DAY, 0);
-            cal.set(Calendar.MINUTE, 0);
-            cal.set(Calendar.SECOND, 0);
-            cal.set(Calendar.MILLISECOND, 0);
+            CalendarHelper.toBeginningOfDay(cal);
             cursor.close();
             return cal;
         }
     }
 
+    public Calendar prevRecordDay(Calendar calendar) {
+        return prevNextDescAsc(calendar, true, true);
+    }
+
     public Calendar nextRecordDay(Calendar calendar) {
-        Cursor cursor = database.query(DATABASE_TABLE,
-                new String[]{Constants.KEY_UTC, Constants.KEY_LAT,
-                        Constants.KEY_LNG, Constants.KEY_ACC},
-                Constants.KEY_UTC + " >= ?",
-                new String[]{Long.toString(calendar.getTimeInMillis()
-                        + 24L * 3600 * 1000)},
-                null, null, Constants.KEY_UTC + " ASC", "1");
-        if (cursor.getCount() == 0) {
-            cursor.close();
-            return null;
-        } else {
-            cursor.moveToFirst();
-            Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(Constants.KEY_UTC)));
-            cal.set(Calendar.HOUR_OF_DAY, 0);
-            cal.set(Calendar.MINUTE, 0);
-            cal.set(Calendar.SECOND, 0);
-            cal.set(Calendar.MILLISECOND, 0);
-            cursor.close();
-            return cal;
+        return prevNextDescAsc(calendar, false, false);
+    }
+
+    public Calendar earliestRecordDay() {
+        return prevNextDescAsc(Calendar.getInstance(), true, false);
+    }
+
+    public void plusOneDay(Span span) {
+        Calendar nextDay;
+        nextDay = nextRecordDay(span.getEndDay());
+        if (nextDay != null) {
+            if (span.isSingleDay())
+                span.setStartDay(nextDay);
+            span.setEndDay(nextDay);
+        }
+    }
+
+    public void minusOneDay(Span span) {
+        Calendar prevDay;
+        prevDay = prevRecordDay(span.getStartDay());
+        if (prevDay != null) {
+            if (span.isSingleDay())
+                span.setEndDay(prevDay);
+            span.setStartDay(prevDay);
         }
     }
 }

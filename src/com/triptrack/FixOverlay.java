@@ -166,7 +166,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
             else {
                 drawMarkers = false;
                 Toast.makeText(map, "Too many fixes (" + size
-                        + ").\nWill not draw markers.", Toast.LENGTH_SHORT).show();
+                        + ").\nMarkers were not drawn.", Toast.LENGTH_SHORT).show();
                 return 0;
             }
         }
@@ -210,7 +210,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
         mPaint.setStrokeWidth(4);
 
         int preX = 0, preY = 0;
-        boolean farAway = true;
+        boolean farEnoughToDraw = true;
         double distance;
         for (Element point : points) {
             GeoPoint gFix = point.getPoint();
@@ -228,16 +228,18 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
                 distance = Math.sqrt(Math.pow((preX - pFix.x), 2)
                         + Math.pow((preY - pFix.y), 2));
                 if (distance > MIN_DIST) {
-                    farAway = true;
+                    // this fix is sufficiently far away from the last one. draw it.
+                    farEnoughToDraw = true;
                     path.lineTo(pFix.x, pFix.y);
                     preX = pFix.x;
                     preY = pFix.y;
                 } else {
-                    farAway = false;
+                    // this fix is NOT sufficiently far away from the last one. do not draw it.
+                    farEnoughToDraw = false;
                 }
             }
 
-            if (farAway) {
+            if (farEnoughToDraw) {
                 int rad = (int) (projection.metersToEquatorPixels(point.acc)
                         * (1 / Math.cos(Math.toRadians(point.lat))));
                 mPaint.setARGB(128, 255 - point.green, point.green, 0);

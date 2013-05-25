@@ -14,17 +14,13 @@ public class Span {
     Calendar endDay = Calendar.getInstance();
 
     public Span() {
-        startDay.set(Calendar.MINUTE, 0);
-        startDay.set(Calendar.SECOND, 0);
-        startDay.set(Calendar.MILLISECOND, 0);
+        CalendarHelper.toBeginningOfDay(startDay);
         endDay.setTime(startDay.getTime());
     }
 
     public void setStartDay(Date day) {
         startDay.setTime(day);
-        startDay.set(Calendar.MINUTE, 0);
-        startDay.set(Calendar.SECOND, 0);
-        startDay.set(Calendar.MILLISECOND, 0);
+        CalendarHelper.toBeginningOfDay(startDay);
         if (!endDay.after(startDay)) {
             endDay.setTime(startDay.getTime());
         }
@@ -32,9 +28,7 @@ public class Span {
 
     public void setStartDay(Calendar day) {
         startDay.setTime(day.getTime());
-        startDay.set(Calendar.MINUTE, 0);
-        startDay.set(Calendar.SECOND, 0);
-        startDay.set(Calendar.MILLISECOND, 0);
+        CalendarHelper.toBeginningOfDay(startDay);
         if (!endDay.after(startDay)) {
             endDay.setTime(startDay.getTime());
         }
@@ -42,9 +36,7 @@ public class Span {
 
     public void setEndDay(Date day) {
         endDay.setTime(day);
-        endDay.set(Calendar.MINUTE, 0);
-        endDay.set(Calendar.SECOND, 0);
-        endDay.set(Calendar.MILLISECOND, 0);
+        CalendarHelper.toBeginningOfDay(endDay);
         if (!endDay.after(startDay)) {
             startDay.setTime(endDay.getTime());
         }
@@ -52,9 +44,7 @@ public class Span {
 
     public void setEndDay(Calendar day) {
         endDay.setTime(day.getTime());
-        endDay.set(Calendar.MINUTE, 0);
-        endDay.set(Calendar.SECOND, 0);
-        endDay.set(Calendar.MILLISECOND, 0);
+        CalendarHelper.toBeginningOfDay(endDay);
         if (!endDay.after(startDay)) {
             startDay.setTime(endDay.getTime());
         }
@@ -68,21 +58,7 @@ public class Span {
         return endDay;
     }
 
-    public boolean isMultiDay() {
+    public boolean isSingleDay() {
         return (startDay.compareTo(endDay) == 0);
-    }
-
-    public void inc() {
-        endDay.add(Calendar.DATE, 1);
-        if (!isMultiDay()) {
-            startDay.add(Calendar.DATE, 1);
-        }
-    }
-
-    public void dec() {
-        endDay.add(Calendar.DATE, -1);
-        if (!isMultiDay()) {
-            startDay.add(Calendar.DATE, -1);
-        }
     }
 }

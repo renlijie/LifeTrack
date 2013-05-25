@@ -52,7 +52,7 @@ public class HistoryMapActivity extends MapActivity {
     // Internal variables
     private FixDataStore fixDataStore = new FixDataStore(this);
     private List<Overlay> mapOverlays;
-    private Calendar firstDay, lastDay;
+    private Span span = new Span();
 
     @Override
     protected boolean isRouteDisplayed() {
@@ -77,20 +77,11 @@ public class HistoryMapActivity extends MapActivity {
 
     void prepareDates(int direction, boolean drawMarkers) {
         if (direction == 1) {
-            Calendar cal;
-            cal = fixDataStore.nextRecordDay(lastDay);
-            if (cal != null)
-                lastDay = cal;
-            firstDay = lastDay;
+            fixDataStore.plusOneDay(span);
         } else if (direction == -1) {
-            Calendar cal;
-            cal = fixDataStore.previousRecordDay(firstDay);
-            if (cal != null) {
-                firstDay = cal;
-            }
-            lastDay = firstDay;
+            fixDataStore.minusOneDay(span);
         }
-        drawFixes(firstDay, lastDay, drawMarkers);
+        drawFixes(span, drawMarkers);
     }
 
     void drawFixes(Calendar firstDay, Calendar lastDay, boolean drawMarkers) {
@@ -105,6 +96,10 @@ public class HistoryMapActivity extends MapActivity {
                 + "\n" + f.numFarAwayFixes() + " out of "
                 + c.getCount());
         zoomToFit(f);
+    }
+
+    void drawFixes(Span span, boolean drawMarkers) {
+        drawFixes(span.getStartDay(), span.getEndDay(), drawMarkers);
     }
 
     void zoomToFit(FixOverlay f) {
@@ -193,9 +188,7 @@ public class HistoryMapActivity extends MapActivity {
         markersButton = (ToggleButton) findViewById(R.id.draw_markers);
 
         calendarView = (CalendarPickerView) findViewById(R.id.calendar);
-        Date zero = new Date();
-        zero.setTime(1);
-        calendarView.init(zero, new Date());
+        calendarView.init(fixDataStore.earliestRecordDay().getTime(), new Date());
 
         markersButton.setChecked(false);
         unboundedDateButton = (Button) findViewById(R.id.unbounded_date);
@@ -219,15 +212,6 @@ public class HistoryMapActivity extends MapActivity {
         });
         // Add a dummy overlay for removal later.
         mapOverlays.add(null);
-
-        firstDay = Calendar.getInstance();
-        firstDay.set(Calendar.HOUR_OF_DAY, 0);
-        firstDay.set(Calendar.MINUTE, 0);
-        firstDay.set(Calendar.SECOND, 0);
-        firstDay.set(Calendar.MILLISECOND, 0);
-
-        lastDay = Calendar.getInstance(firstDay.getTimeZone());
-        lastDay.setTime(firstDay.getTime());
 
         prepareDates(0, markersButton.isChecked());
 
@@ -277,23 +261,17 @@ public class HistoryMapActivity extends MapActivity {
             @Override
             public void onDateSelected(Date date) {
                 if (firstDayButton.isChecked()) {
-                    firstDay.setTime(date);
+                    span.setStartDay(date);
                     lastDayButton.setChecked(true);
                     firstDayButton.setChecked(false);
-                    if (!lastDay.after(firstDay)) {
-                        lastDay.setTime(firstDay.getTime());
-                    }
                     Toast.makeText(HistoryMapActivity.this,
-                            CalendarHelper.prettyInterval(firstDay, lastDay), Toast.LENGTH_SHORT).show();
+                            CalendarHelper.prettyInterval(span), Toast.LENGTH_SHORT).show();
                 } else {
-                    lastDay.setTime(date);
+                    span.setEndDay(date);
                     firstDayButton.setChecked(true);
                     lastDayButton.setChecked(false);
-                    if (!lastDay.after(firstDay)) {
-                        firstDay.setTime(lastDay.getTime());
-                    }
                     Toast.makeText(HistoryMapActivity.this,
-                            CalendarHelper.prettyInterval(firstDay, lastDay), Toast.LENGTH_SHORT).show();
+                            CalendarHelper.prettyInterval(span), Toast.LENGTH_SHORT).show();
                 }
             }
         });
@@ -302,7 +280,7 @@ public class HistoryMapActivity extends MapActivity {
             @Override
             public void onClick(View v) {
                 showMapPanel();
-                drawFixes(firstDay, lastDay, markersButton.isChecked());
+                drawFixes(span, markersButton.isChecked());
             }
         });
 
@@ -310,24 +288,18 @@ public class HistoryMapActivity extends MapActivity {
             @Override
             public void onClick(View v) {
                 if (firstDayButton.isChecked()) {
-                    firstDay.setTimeInMillis(0);
-                    if (!lastDay.after(firstDay)) {
-                        lastDay.setTime(firstDay.getTime());
-                    }
+                    span.setStartDay(fixDataStore.earliestRecordDay());
+                    lastDayButton.setChecked(true);
+                    firstDayButton.setChecked(false);
                     Toast.makeText(HistoryMapActivity.this,
-                            CalendarHelper.prettyInterval(firstDay, lastDay), Toast.LENGTH_SHORT).show();
+                            CalendarHelper.prettyInterval(span), Toast.LENGTH_SHORT).show();
                 }
                 else {
-                    lastDay.setTimeInMillis(Calendar.getInstance().getTimeInMillis());
-                    lastDay.set(Calendar.HOUR_OF_DAY, 0);
-                    lastDay.set(Calendar.MINUTE, 0);
-                    lastDay.set(Calendar.SECOND, 0);
-                    lastDay.set(Calendar.MILLISECOND, 0);
-                    if (!lastDay.after(firstDay)) {
-                        firstDay.setTime(lastDay.getTime());
-                    }
+                    span.setEndDay(Calendar.getInstance());
+                    lastDayButton.setChecked(false);
+                    firstDayButton.setChecked(true);
                     Toast.makeText(HistoryMapActivity.this,
-                            CalendarHelper.prettyInterval(firstDay, lastDay), Toast.LENGTH_SHORT).show();
+                            CalendarHelper.prettyInterval(span), Toast.LENGTH_SHORT).show();
                 }
             }
         });
