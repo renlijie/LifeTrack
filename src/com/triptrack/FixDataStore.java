@@ -320,9 +320,8 @@ public class FixDataStore {
     public void deleteDay(long utc) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(utc);
-        CalendarHelper.toBeginningOfDay(cal);
 
-        long fromUtc = cal.getTimeInMillis();
+        long fromUtc = CalendarHelper.toBeginningOfDay(cal).getTimeInMillis();
         long toUtc = fromUtc + 24L * 3600 * 1000;
         database.delete(DATABASE_TABLE, Constants.KEY_UTC + ">=" + Long.toString(fromUtc)
                 + " AND " + Constants.KEY_UTC + "<" + Long.toString(toUtc), null);
@@ -405,9 +404,8 @@ public class FixDataStore {
             cursor.moveToFirst();
             Calendar cal = Calendar.getInstance();
             cal.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(Constants.KEY_UTC)));
-            CalendarHelper.toBeginningOfDay(cal);
             cursor.close();
-            return cal;
+            return CalendarHelper.toBeginningOfDay(cal);
         }
     }
 

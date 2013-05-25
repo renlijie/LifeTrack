@@ -4,7 +4,6 @@ import java.util.Calendar;
 import java.util.Date;
 
 /**
- * Created with IntelliJ IDEA.
  * User: lijie
  * Date: 5/24/13
  * Time: 10:08 AM
@@ -14,8 +13,7 @@ public class Span {
     Calendar endDay = Calendar.getInstance();
 
     public Span() {
-        CalendarHelper.toBeginningOfDay(startDay);
-        endDay.setTime(startDay.getTime());
+        endDay.setTime(CalendarHelper.toBeginningOfDay(startDay).getTime());
     }
 
     public void setStartDay(Date day) {

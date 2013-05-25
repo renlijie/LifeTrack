@@ -20,10 +20,11 @@ public class CalendarHelper {
         return prettyInterval(span.getStartDay(), span.getEndDay());
     }
 
-    public static void toBeginningOfDay(Calendar day) {
+    public static Calendar toBeginningOfDay(Calendar day) {
         day.set(Calendar.HOUR_OF_DAY, 0);
         day.set(Calendar.MINUTE, 0);
         day.set(Calendar.SECOND, 0);
         day.set(Calendar.MILLISECOND, 0);
+        return day;
     }
 }

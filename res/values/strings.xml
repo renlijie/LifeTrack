@@ -41,11 +41,10 @@
     <string name="draw_markers">no markers</string>
     <string name="no_markers">show markers</string>
 
-    <string name="unbounded_date">+\u221E/-\u221E</string>
     <string name="settings">settings</string>
     <string name="draw">Show</string>
-    <string name="first_day">from</string>
-    <string name="last_day">to</string>
+    <string name="earliest_day">-\u221E</string>
+    <string name="today">today</string>
 
     <string name="about">About</string>
 

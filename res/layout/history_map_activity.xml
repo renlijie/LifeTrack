@@ -60,25 +60,11 @@
         android:id="@+id/calendar"
         android:visibility="gone"
         android:layout_above="@id/next_day"
-        android:layout_below="@id/settings"
+        android:layout_alignTop="@id/mapview"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
 
-    <Button
-        android:id="@+id/unbounded_date"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:text="@string/unbounded_date" />
 
-    <Button
-        android:id="@+id/draw"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignRight="@id/mapview"
-        android:layout_alignTop="@id/mapview"
-        android:text="@string/draw"
-        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="fill_parent"
@@ -87,25 +73,29 @@
         android:layout_alignLeft="@id/mapview"
         android:weightSum="1.0" >
 
-        <ToggleButton
-            android:id="@+id/first_day"
+        <Button
+            android:id="@+id/earliest"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight=".3"
             android:visibility="gone"
-            android:textOff="@string/first_day"
-            android:textOn="@string/first_day" />
+            android:text="@string/earliest_day" />
 
+        <Button
+            android:id="@+id/draw"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight=".4"
+            android:text="@string/draw"
+            android:visibility="gone" />
 
-
-        <ToggleButton
-            android:id="@+id/last_day"
+        <Button
+            android:id="@+id/today"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight=".3"
             android:visibility="gone"
-            android:textOff="@string/last_day"
-            android:textOn="@string/last_day" />
+            android:text="@string/today" />
 
     </LinearLayout>
 

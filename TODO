@@ -7,7 +7,6 @@ Add animation.
 Add nextFix/prevFix button.
 Add other Google Map modes.
 Show indecisive progress bar while drawing.
-Set startDate and endDate? If (endDate == startDate), show one day's fixes.
 Add widget?
 
 Logic
@@ -23,10 +22,9 @@ Link photos to fixes?
 
 Code
 ***
+More comments!
 Move strings to strings.xml.
 Re-factor when possible.
-Add more comments.
-Change calendar to UTC?
 
 
 --------------------------------------
@@ -34,6 +32,7 @@ Done: (recent -> old)
 
 UI
 ***
+Set startDate and endDate? If (endDate == startDate), show one day's fixes.
 Make the history map the main activity.
 Dynamically adjust the numeber of fixes drawn.
 Draw more efficiently when the # of fixes is large.
