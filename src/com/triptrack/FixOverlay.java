@@ -1,7 +1,6 @@
 package com.triptrack;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Canvas;
@@ -10,7 +9,11 @@ import android.graphics.Path;
 import android.graphics.Point;
 import android.location.Location;
 import android.widget.Toast;
-import com.google.android.maps.*;
+import com.google.android.maps.GeoPoint;
+import com.google.android.maps.ItemizedOverlay;
+import com.google.android.maps.MapView;
+import com.google.android.maps.OverlayItem;
+import com.google.android.maps.Projection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,8 +28,9 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
     private final Cursor c;
 
     private ArrayList<Element> points = new ArrayList<Element>();
-    private Context context;
     private HistoryMapActivity map;
+
+    private boolean drawMarkers;
 
     private double maxLat = -90;
     private double minLat = 90;
@@ -55,9 +59,9 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
         }
     }
 
-    public FixOverlay(Context context, Cursor rows, Calendar calendar, HistoryMapActivity map) {
-        super(boundCenterBottom(context.getResources().getDrawable(R.drawable.marker)));
-        this.context = context;
+    public FixOverlay(Cursor rows, HistoryMapActivity map, boolean drawMarkers) {
+        super(boundCenterBottom(map.getResources().getDrawable(R.drawable.marker)));
+        this.drawMarkers = drawMarkers;
         this.map = map;
         c = rows;
 
@@ -71,7 +75,6 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
 
         int index = 0;
         int green;
-        double colorPosition;
         double preLat = 0, preLng = 0;
         float[] results = new float[1];
         boolean firstPoint = true;
@@ -104,15 +107,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
             if (lat < minLat)
                 minLat = lat;
 
-            if (calendar == null) {
-                // sizeColor
-                colorPosition = (double) index++ / size;
-            } else {
-                // timeColor
-                colorPosition = (double) (utc - calendar.getTimeInMillis()) / (24L * 3600 * 1000);
-            }
-
-            green = (int) (255 * colorPosition);
+            green = (int) (255 * (double) index++ / size);
             points.add(new Element(utc, lat, lng, acc, green));
             lngList.add(lng);
 
@@ -151,7 +146,6 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
 
         cenLat = (minLat + maxLat) / 2;
         latSpan = maxLat - minLat;
-
         populate();
     }
 
@@ -165,9 +159,17 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
 
     @Override
     public int size() {
-        int size = points.size();
-        if (size < MAX_SIZE)
-            return size;
+        if (drawMarkers) {
+            int size = points.size();
+            if (size <= MAX_SIZE)
+                return size;
+            else {
+                drawMarkers = false;
+                Toast.makeText(map, "Too many fixes (" + size
+                        + ").\nMarkers were not drawn.", Toast.LENGTH_SHORT).show();
+                return 0;
+            }
+        }
         else
             return 0;
     }
@@ -208,7 +210,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
         mPaint.setStrokeWidth(4);
 
         int preX = 0, preY = 0;
-        boolean faraway = true;
+        boolean farEnoughToDraw = true;
         double distance;
         for (Element point : points) {
             GeoPoint gFix = point.getPoint();
@@ -226,27 +228,26 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
                 distance = Math.sqrt(Math.pow((preX - pFix.x), 2)
                         + Math.pow((preY - pFix.y), 2));
                 if (distance > MIN_DIST) {
-                    faraway = true;
+                    // this fix is sufficiently far away from the last one. draw it.
+                    farEnoughToDraw = true;
                     path.lineTo(pFix.x, pFix.y);
                     preX = pFix.x;
                     preY = pFix.y;
                 } else {
-                    faraway = false;
+                    // this fix is NOT sufficiently far away from the last one. do not draw it.
+                    farEnoughToDraw = false;
                 }
             }
 
-            if (faraway) {
+            if (farEnoughToDraw) {
                 int rad = (int) (projection.metersToEquatorPixels(point.acc)
                         * (1 / Math.cos(Math.toRadians(point.lat))));
                 mPaint.setARGB(128, 255 - point.green, point.green, 0);
-                // mPaint.setARGB((int) (10 * (500 / acc)), red, green, blue);
-
                 canvas.drawCircle(pFix.x, pFix.y, rad, mPaint);
             }
         }
 
         mPaint.setARGB(128, 0, 0, 255);
-        // mPaint.setARGB(128, 128, 128, 128);
         canvas.drawPath(path, mPaint);
     }
 
@@ -260,8 +261,8 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
         final Element item = points.get(index);
         Calendar c = new GregorianCalendar();
         c.setTimeInMillis(item.utc);
-        new AlertDialog.Builder(context)
-                .setTitle(HistoryMapActivity.printDate(c) + " "
+        new AlertDialog.Builder(map)
+                .setTitle(CalendarHelper.prettyDate(c) + " "
                         + String.format("%02d", c.get(Calendar.HOUR_OF_DAY)) + ":"
                         + String.format("%02d", c.get(Calendar.MINUTE)) + ":"
                         + String.format("%02d", c.get(Calendar.SECOND)))
@@ -272,17 +273,17 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
                 .setPositiveButton("Delete this fix", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        new AlertDialog.Builder(context)
+                        new AlertDialog.Builder(map)
                                 .setTitle("Confirm").setMessage("DELETE?")
                                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int id) {
-                                        FixDataStore fixDataStore = new FixDataStore(context);
+                                        FixDataStore fixDataStore = new FixDataStore(map);
                                         fixDataStore.open();
-                                        fixDataStore.delete(item.utc);
+                                        fixDataStore.deleteSingle(item.utc);
                                         fixDataStore.close();
-                                        map.prepareRows(0, false, false);
-                                        Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
+                                        map.prepareDates(0, true);
+                                        Toast.makeText(map, "deleted!", Toast.LENGTH_SHORT).show();
                                     }
                                 })
                                 .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -297,17 +298,17 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
                 .setNegativeButton("DELETE THIS DAY", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        new AlertDialog.Builder(context)
+                        new AlertDialog.Builder(map)
                                 .setTitle("Confirm").setMessage("DELETE?")
                                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
-                                        FixDataStore fixDataStore = new FixDataStore(context);
+                                        FixDataStore fixDataStore = new FixDataStore(map);
                                         fixDataStore.open();
                                         fixDataStore.deleteDay(item.utc);
                                         fixDataStore.close();
-                                        map.prepareRows(0, false, false);
-                                        Toast.makeText(context, "deleted!", Toast.LENGTH_SHORT).show();
+                                        map.prepareDates(0, true);
+                                        Toast.makeText(map, "deleted!", Toast.LENGTH_SHORT).show();
                                     }
                                 })
                                 .setNegativeButton("No", new DialogInterface.OnClickListener() {

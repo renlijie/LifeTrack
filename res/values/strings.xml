@@ -4,8 +4,6 @@
 
     <!-- shown as app name -->
     <string name="app_name">TripTrack</string>
-    <!-- shown as map activity name -->
-    <string name="map_name">HistoryMap</string>
 
     <string name="start_repeating_alarm">Start recording my locations!</string>
     <string name="stop_repeating_alarm">Stop recording my locations!</string>
@@ -38,13 +36,16 @@
     <string name="clear_finished">History cleared.</string>
 
     <string name="show_history">Show my history</string>
-    <string name="previous_day">previous day</string>
-    <string name="next_day">next day</string>
-    <string name="all_days">all days</string>
+    <string name="previous_day">-1 day</string>
+    <string name="next_day">+1 day</string>
+    <string name="draw_markers">no markers</string>
+    <string name="no_markers">show markers</string>
+
+    <string name="unbounded_date">+\u221E/-\u221E</string>
     <string name="settings">settings</string>
-    <string name="back">back</string>
-    <string name="start_date">start date</string>
-    <string name="end_date">end date</string>
+    <string name="draw">Show</string>
+    <string name="first_day">from</string>
+    <string name="last_day">to</string>
 
     <string name="about">About</string>
 
