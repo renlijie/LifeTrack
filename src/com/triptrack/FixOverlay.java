@@ -39,7 +39,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
     private double rightLng = 0;
     private double leftLng = 0;
     private double cenLng = 0;
-    private double lngSpan = 0;
+    private double lngSpan = 180;
 
     class Element extends OverlayItem {
         public

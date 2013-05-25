@@ -12,7 +12,7 @@ public final class Constants {
   /**
    * default sampling interval
    */
-  static final int DEFAULT_INTERVAL_MINS = 10;
+  static final int DEFAULT_INTERVAL_MINS = 5;
 
   /**
    * name of the application's shared preferences file

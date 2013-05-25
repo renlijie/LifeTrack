@@ -11,6 +11,7 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.widget.Button;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 import com.google.android.maps.GeoPoint;
 import com.google.android.maps.MapActivity;
@@ -91,6 +92,9 @@ public class HistoryMapActivity extends MapActivity {
         dateSettingsButton.setText(CalendarHelper.prettyInterval(firstDay, lastDay)
                 + "\n" + f.numFarAwayFixes() + " out of "
                 + c.getCount());
+        if (f.numFarAwayFixes() == 0) {
+            Toast.makeText(this, "no location during this period of time", Toast.LENGTH_SHORT).show();
+        }
         zoomToFit(f);
     }
 
@@ -163,8 +167,11 @@ public class HistoryMapActivity extends MapActivity {
 
         Calendar tomorrow = Calendar.getInstance();
         tomorrow.add(Calendar.DATE, 1);
-        calendarView.init(fixDataStore.earliestRecordDay().getTime(), tomorrow.getTime())
-                    .inMode(CalendarPickerView.SelectionMode.SELECTED_PERIOD);
+        Calendar earliest = fixDataStore.earliestRecordDay();
+        calendarView.init(earliest == null?
+                CalendarHelper.toBeginningOfDay(Calendar.getInstance()).getTime(): earliest.getTime(),
+                tomorrow.getTime())
+                .inMode(CalendarPickerView.SelectionMode.SELECTED_PERIOD);
         calendarView.selectDate(span.getStartDay().getTime());
         calendarView.selectDate(span.getEndDay().getTime());
 
@@ -268,7 +275,9 @@ public class HistoryMapActivity extends MapActivity {
         earliestDayButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                calendarView.selectDate(fixDataStore.earliestRecordDay().getTime());
+                Calendar day = fixDataStore.earliestRecordDay();
+                calendarView.selectDate(day == null ?
+                        CalendarHelper.toBeginningOfDay(Calendar.getInstance()).getTime() : day.getTime());
             }
         });
 
