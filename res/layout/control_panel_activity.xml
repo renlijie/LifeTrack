@@ -18,19 +18,20 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/ScrollView"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="fill_parent"
     android:background="@drawable/background"
     android:scrollbars="vertical" >
 
     <LinearLayout
         xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:gravity="center_horizontal"
         android:orientation="vertical"
-        android:padding="4dp" >
+        android:padding="10dp" >
 
         <TextView
+            android:id="@+id/switch_instruction"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="0"
@@ -42,6 +43,7 @@
             android:layout_width="240dp"
             android:layout_height="80dp"
             android:layout_weight="0"
+            android:layout_marginBottom="15dp"
             android:textOff="@string/start_repeating_alarm"
             android:textOn="@string/stop_repeating_alarm" />
 
@@ -50,27 +52,22 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="0"
+            android:layout_marginBottom="20dp"
             android:text="@string/set_interval" />
 
-        <View
-            android:layout_width="fill_parent"
-            android:layout_height="20dp" />
-
         <Button
-            android:id="@+id/show_fixes"
+            android:id="@+id/show_history"
             android:layout_width="160dp"
             android:layout_height="60dp"
+            android:layout_marginBottom="20dp"
             android:text="@string/show_history" />
-
-        <View
-            android:layout_width="fill_parent"
-            android:layout_height="20dp" />
 
         <Button
             android:id="@+id/import_history"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_weight="0"
+            android:layout_marginBottom="20dp"
             android:text="@string/import_history" />
 
         <Button
@@ -78,6 +75,7 @@
             android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_weight="0"
+            android:layout_marginBottom="20dp"
             android:text="@string/export_history" />
 
         <Button
@@ -85,11 +83,8 @@
             android:layout_width="200dp"
             android:layout_height="wrap_content"
             android:layout_weight="0"
+            android:layout_marginBottom="20dp"
             android:text="@string/clear_history" />
-
-        <View
-            android:layout_width="fill_parent"
-            android:layout_height="20dp" />
 
         <Button
             android:id="@+id/about"
