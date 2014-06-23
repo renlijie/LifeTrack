@@ -18,11 +18,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.text.Editable;
 import android.text.InputType;
-import android.view.Display;
-import android.view.Surface;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -51,16 +48,7 @@ public final class ControlPanelActivity extends Activity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-
-    // Check display's orientation and draw the activity accordingly.
-    final Display display = ((WindowManager) getSystemService(WINDOW_SERVICE))
-        .getDefaultDisplay();
-    final int rotation = display.getRotation();
-    if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
-      setContentView(R.layout.control_panel_activity);
-    } else {
-      setContentView(R.layout.control_panel_activity_land);
-    }
+    setContentView(R.layout.control_panel_activity);
 
     // SharedPreferences reader and writer.
     final SharedPreferences settings = getSharedPreferences(Constants.PREFS_FILE, MODE_PRIVATE);

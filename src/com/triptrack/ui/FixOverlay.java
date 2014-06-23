@@ -269,7 +269,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
                     geoFixDataStore.open();
                     geoFixDataStore.deleteGeoFix(item.utc);
                     geoFixDataStore.close();
-                    map.prepareDates(0, true);
+                    map.updateDrawing(0, true);
                     Toast.makeText(map, "deleted!", Toast.LENGTH_SHORT).show();
                   }
                 })
@@ -294,7 +294,7 @@ class FixOverlay extends ItemizedOverlay<OverlayItem> {
                     geoFixDataStore.open();
                     geoFixDataStore.deleteOneDay(item.utc);
                     geoFixDataStore.close();
-                    map.prepareDates(0, true);
+                    map.updateDrawing(0, true);
                     Toast.makeText(map, "deleted!", Toast.LENGTH_SHORT).show();
                   }
                 })
