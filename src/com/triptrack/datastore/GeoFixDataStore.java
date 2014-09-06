@@ -16,12 +16,10 @@ import android.os.Message;
 import android.util.Log;
 
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Calendar;
 
 public class GeoFixDataStore {
@@ -61,7 +59,7 @@ public class GeoFixDataStore {
       } catch (SQLException e) {
         Log.w(Constants.TAG + ":" + TAG,
             "Database is not available. Will try again in "
-                + Integer.toString(waitInMillis) + " ms.");
+                + Integer.toString(waitInMillis) + " ms.", e);
       }
       try {
         // Wait in case the database is not immediately available.
@@ -70,7 +68,7 @@ public class GeoFixDataStore {
           waitInMillis *= 2;
         }
       } catch (InterruptedException e) {
-        Log.w(Constants.TAG + ":" + TAG, e.toString());
+        Log.w(Constants.TAG + ":" + TAG, e);
       }
     }
     return this;
@@ -85,55 +83,59 @@ public class GeoFixDataStore {
     Cursor cursor = getRecentGeoFixes(0);
 
     if (cursor.moveToFirst()) {
-      FileOutputStream fos;
+      FileOutputStream fos = null;
       try {
         fos = new FileOutputStream(file);
         // write total number of fixes
         fos.write((cursor.getCount() + "\n").getBytes());
+
+        int numGeoFixesExported = 0;
+        uiHandler.sendMessage(Message.obtain(uiHandler,
+            Constants.HANDLER_PROGRESSBAR_SHOWMAX, cursor.getCount(), 0, null));
+
+        // write all fixes
+        while (true) {
+          String geoFix = getStringFromEntry(cursor);
+          try {
+            fos.write(geoFix.getBytes());
+          } catch (IOException e) {
+            uiHandler.sendMessage(Message.obtain(
+                uiHandler, Constants.HANDLER_TOAST, 0, 0,
+                "Writing to " + file + " failed."));
+            Log.w(Constants.TAG + ":" + TAG,
+                "Writing " + geoFix + " failed.", e);
+          }
+
+          numGeoFixesExported++;
+          if (numGeoFixesExported % 1000 == 0) {
+            uiHandler.sendMessage(Message.obtain(
+                uiHandler, Constants.HANDLER_PROGRESSBAR_SETPROGRESS,
+                numGeoFixesExported, 0, null));
+          }
+
+          if (cursor.isLast()) {
+            break;
+          }
+          cursor.moveToNext();
+        }
       } catch (IOException e) {
         uiHandler.sendMessage(Message.obtain(
             uiHandler, Constants.HANDLER_TOAST, 0, 0,
-            "Opening " + file + " failed. Do you have access?"));
-        Log.w(Constants.TAG + ":" + TAG, "Opening " + file + " failed.");
+            "Operating " + file + " failed. Do you have access?"));
+        Log.w(Constants.TAG + ":" + TAG, "Operating " + file + " failed.", e);
         return;
-      }
-
-      int numGeoFixesExported = 0;
-      uiHandler.sendMessage(Message.obtain(uiHandler,
-          Constants.HANDLER_PROGRESSBAR_SHOWMAX, cursor.getCount(), 0, null));
-
-      // write all fixes
-      while (true) {
-        String geoFix = getStringFromEntry(cursor);
-        try {
-          fos.write(geoFix.getBytes());
-        } catch (IOException e) {
-          uiHandler.sendMessage(Message.obtain(
-              uiHandler, Constants.HANDLER_TOAST, 0, 0,
-              "Writing to " + file + " failed."));
-          Log.w(Constants.TAG + ":" + TAG, "Writing " + geoFix + " failed.");
+      } finally {
+        if (fos != null) {
+          try {
+            fos.close();
+          } catch (IOException e) {
+            uiHandler.sendMessage(Message.obtain(
+                uiHandler, Constants.HANDLER_TOAST, 0, 0,
+                "Closing " + file + " failed. Do you have access?"));
+            Log.w(Constants.TAG + ":" + TAG, "Closing " + file + " failed.", e);
+            return;
+          }
         }
-
-        numGeoFixesExported++;
-        if (numGeoFixesExported % 1000 == 0) {
-          uiHandler.sendMessage(Message.obtain(
-              uiHandler, Constants.HANDLER_PROGRESSBAR_SETPROGRESS,
-              numGeoFixesExported, 0, null));
-        }
-
-        if (cursor.isLast()) {
-          break;
-        }
-        cursor.moveToNext();
-      }
-
-      // close file
-      try {
-        fos.close();
-      } catch (IOException e) {
-        uiHandler.sendMessage(Message.obtain(uiHandler,
-            Constants.HANDLER_TOAST, 0, 0, "Closing " + file + " failed."));
-        Log.w(Constants.TAG + ":" + TAG, "Closing " + file + " failed.");
       }
 
       uiHandler.sendMessage(Message.obtain(uiHandler, Constants.HANDLER_TOAST,
@@ -148,154 +150,138 @@ public class GeoFixDataStore {
   }
 
   public void importFromFile(File file, Handler uiHandler) {
-    // Open a reader.
-    FileInputStream fis;
+    BufferedReader br = null;
     try {
-      fis = new FileInputStream(file);
-    } catch (IOException e) {
-      uiHandler.sendMessage(Message.obtain(uiHandler, Constants.HANDLER_TOAST,
-          0, 0, "Opening " + file + " failed. Does it exist?"));
-      Log.w(Constants.TAG + ":" + TAG, "Opening " + file + " failed.");
-      return;
-    }
-    BufferedReader br = new BufferedReader(
-        new InputStreamReader(new DataInputStream(fis)));
-
-    // Read the first line containing the total number of fixes.
-    String line;
-    int numFixes;
-    try {
-      line = br.readLine();
-    } catch (IOException e) {
-      uiHandler.sendMessage(Message.obtain(uiHandler,
-          Constants.HANDLER_TOAST, 0, 0, "Reading " + file + " failed."));
-      Log.w(Constants.TAG + ":" + TAG, "Reading " + file + " failed.");
-      return;
-    }
-    try {
-      numFixes = Integer.parseInt(line);
-    } catch (NumberFormatException e) {
-      // If the first line cannot be parsed as an int, create a new reader
-      // to read from the beginning of the file, in case the first line is
-      // actually a fix.
-      try {
-        br.close();
-        fis = new FileInputStream(file);
-      } catch (IOException ex) {
-        uiHandler.sendMessage(Message.obtain(uiHandler, Constants.HANDLER_TOAST,
-            0, 0, "Opening " + file + " failed. Does it exist?"));
-        Log.w(Constants.TAG + ":" + TAG, "Opening " + file + " failed.");
-        return;
-      }
-      br = new BufferedReader(new InputStreamReader(new DataInputStream(fis)));
-
-      // Assign a fake size.
-      numFixes = Integer.MAX_VALUE;
-
-      // Notify the user and set the flag. Continue.
-      uiHandler.sendMessage(Message.obtain(uiHandler, Constants.HANDLER_TOAST,
-          0, 0, "Reading size failed. But continue."));
-      Log.w(Constants.TAG + ":" + TAG, "Reading size failed." + line);
-    }
-
-    // Show the progress bar.
-    uiHandler.sendMessage(Message.obtain(uiHandler,
-        Constants.HANDLER_PROGRESSBAR_SHOWMAX, numFixes, 0, null));
-
-    long utc;
-    double lat, lng;
-    float acc;
-
-    // The index of the fix currently being imported.
-    int numImportedFixes = 0;
-    // The number of fixes written successfully.
-    int numGoodFixes = 0;
-    // The number of illegal fixes.
-    int numBadFixes = 0;
-    // The number of fixes written unsuccessfully.
-    int numDuplicatedFixes = 0;
-
-    // Use transaction to significantly improve efficiency.
-    database.beginTransaction();
-
-    while (true) {
-      numImportedFixes++;
-      if (numImportedFixes % 1000 == 0) {
-        uiHandler.sendMessage(Message.obtain(
-            uiHandler, Constants.HANDLER_PROGRESSBAR_SETPROGRESS,
-            numImportedFixes, 0, null));
-      }
-      // Read the current line. Should contain a fix.
+      br = new BufferedReader(new FileReader(file));
+      // Read the first line containing the total number of fixes.
+      String line;
+      int numFixes;
       try {
         line = br.readLine();
       } catch (IOException e) {
         uiHandler.sendMessage(Message.obtain(uiHandler,
             Constants.HANDLER_TOAST, 0, 0, "Reading " + file + " failed."));
-        Log.w(Constants.TAG + ":" + TAG, "Reading " + file + " failed.");
+        Log.w(Constants.TAG + ":" + TAG, "Reading " + file + " failed.", e);
         return;
       }
-      if (line == null) {
-        break;
-      }
-      // Parse the line as a fix.
-      String[] entry = line.split(",");
-      if (entry.length < 4) {
-        numBadFixes++;
-        Log.e(Constants.TAG + ":" + TAG, "Malformed fix: #" + numImportedFixes);
-        continue;
-      }
-      // Validate the data.
       try {
-        utc = Long.parseLong(entry[0]);
-        lat = Double.parseDouble(entry[1]);
-        lng = Double.parseDouble(entry[2]);
-        acc = Float.parseFloat(entry[3]);
+        numFixes = Integer.parseInt(line);
       } catch (NumberFormatException e) {
-        numBadFixes++;
-        Log.w(Constants.TAG + ":" + TAG,
-            "Non-parseable fix: #" + numImportedFixes);
-        continue;
-      }
-      if (utc < 0 || lat < -90 || lat > 90 || lng > 180 || lng < -180 ||
-          acc < 0) {
-        numBadFixes++;
-        Log.w(Constants.TAG + ":" + TAG,
-            "Out of bound fix: #" + numImportedFixes);
-        continue;
+        uiHandler.sendMessage(Message.obtain(
+            uiHandler, Constants.HANDLER_TOAST, 0, 0,
+            "Reading size failed. The first line must contain an integer."));
+        Log.w(Constants.TAG + ":" + TAG, "Reading size failed." + line, e);
+        return;
       }
 
-      // Insert the fix to DB. If it is already in there, an SQLException would
-      // be caught.
-      try {
-        insertGeoFixOrThrow(utc, lat, lng, acc);
-        numGoodFixes++;
-      } catch (SQLException e) {
-        numDuplicatedFixes++;
-        Log.w(Constants.TAG + ":" + TAG, "Duplicate fix: #" + numImportedFixes);
-      }
-    }
-
-    database.setTransactionSuccessful();
-    database.endTransaction();
-
-    // Notify the user about the stats.
-    String stats = "Done. Read "
-        + Integer.toString(numGoodFixes + numDuplicatedFixes + numBadFixes)
-        + " geo-fixes.\n" + Integer.toString(numGoodFixes)
-        + " are written successfully.\n" + Integer.toString(numDuplicatedFixes)
-        + " are already in the database.\n" + Integer.toString(numBadFixes)
-        + " are not valid.";
-    uiHandler.sendMessage(Message.obtain(
-        uiHandler, Constants.HANDLER_TOAST, 0, 0, stats));
-    Log.d(Constants.TAG + ":" + TAG, stats);
-
-    // Close the reader.
-    try {
-      br.close();
-    } catch (IOException e) {
+      // Show the progress bar.
       uiHandler.sendMessage(Message.obtain(uiHandler,
-          Constants.HANDLER_TOAST, 0, 0, "Closing " + file + " failed."));
-      Log.w(Constants.TAG + ":" + TAG, "Closing " + file + " failed.");
+          Constants.HANDLER_PROGRESSBAR_SHOWMAX, numFixes, 0, null));
+
+      long utc;
+      double lat, lng;
+      float acc;
+
+      // The index of the fix currently being imported.
+      int numImportedFixes = 0;
+      // The number of fixes written successfully.
+      int numGoodFixes = 0;
+      // The number of illegal fixes.
+      int numBadFixes = 0;
+      // The number of fixes written unsuccessfully.
+      int numDuplicatedFixes = 0;
+
+      // Use transaction to significantly improve efficiency.
+      database.beginTransaction();
+
+      while (true) {
+        numImportedFixes++;
+        if (numImportedFixes % 1000 == 0) {
+          uiHandler.sendMessage(Message.obtain(
+              uiHandler, Constants.HANDLER_PROGRESSBAR_SETPROGRESS,
+              numImportedFixes, 0, null));
+        }
+        // Read the current line. Should contain a fix.
+        try {
+          line = br.readLine();
+        } catch (IOException e) {
+          uiHandler.sendMessage(Message.obtain(uiHandler,
+              Constants.HANDLER_TOAST, 0, 0, "Reading " + file + " failed."));
+          Log.w(Constants.TAG + ":" + TAG, "Reading " + file + " failed.", e);
+          return;
+        }
+        if (line == null) {
+          break;
+        }
+        // Parse the line as a fix.
+        String[] entry = line.split(",");
+        if (entry.length < 4) {
+          numBadFixes++;
+          Log.e(Constants.TAG + ":" + TAG, "Malformed fix: #" + numImportedFixes);
+          continue;
+        }
+        // Validate the data.
+        try {
+          utc = Long.parseLong(entry[0]);
+          lat = Double.parseDouble(entry[1]);
+          lng = Double.parseDouble(entry[2]);
+          acc = Float.parseFloat(entry[3]);
+        } catch (NumberFormatException e) {
+          numBadFixes++;
+          Log.w(Constants.TAG + ":" + TAG,
+              "Non-parseable fix: #" + numImportedFixes, e);
+          continue;
+        }
+        if (utc < 0 || lat < -90 || lat > 90 || lng > 180 || lng < -180 ||
+            acc < 0) {
+          numBadFixes++;
+          Log.w(Constants.TAG + ":" + TAG,
+              "Out of bound fix: #" + numImportedFixes);
+          continue;
+        }
+
+        // Insert the fix to DB. If it is already in there, an SQLException would
+        // be caught.
+        try {
+          insertGeoFixOrThrow(utc, lat, lng, acc);
+          numGoodFixes++;
+        } catch (SQLException e) {
+          numDuplicatedFixes++;
+          Log.w(Constants.TAG + ":" + TAG,
+              "Duplicate fix: #" + numImportedFixes, e);
+        }
+      }
+
+      database.setTransactionSuccessful();
+      database.endTransaction();
+
+      // Notify the user about the stats.
+      String stats = "Done. Read "
+          + Integer.toString(numGoodFixes + numDuplicatedFixes + numBadFixes)
+          + " geo-fixes.\n" + Integer.toString(numGoodFixes)
+          + " are written successfully.\n" + Integer.toString(numDuplicatedFixes)
+          + " are already in the database.\n" + Integer.toString(numBadFixes)
+          + " are not valid.";
+      uiHandler.sendMessage(Message.obtain(
+          uiHandler, Constants.HANDLER_TOAST, 0, 0, stats));
+      Log.d(Constants.TAG + ":" + TAG, stats);
+    } catch (IOException e) {
+      uiHandler.sendMessage(Message.obtain(uiHandler, Constants.HANDLER_TOAST,
+          0, 0, "Operating " + file + " failed. Does it exist?"));
+      Log.w(Constants.TAG + ":" + TAG, "Operating " + file + " failed.", e);
+      return;
+    } finally {
+      if (br != null) {
+        try {
+          br.close();
+        } catch (IOException e) {
+          uiHandler.sendMessage(Message.obtain(
+              uiHandler, Constants.HANDLER_TOAST, 0, 0,
+              "Closing " + file + " failed."));
+          Log.w(Constants.TAG + ":" + TAG, "Closing " + file + " failed.", e);
+          return;
+        }
+      }
     }
   }
 
@@ -371,9 +357,7 @@ public class GeoFixDataStore {
     Calendar nextDay;
     nextDay = nextRecordDay(dateRange.getEndDay());
     if (nextDay != null) {
-      if (dateRange.isSingleDay())
-        dateRange.setStartDay(nextDay);
-      dateRange.setEndDay(nextDay);
+      dateRange.setStartDay(nextDay);
     }
   }
 
@@ -381,9 +365,7 @@ public class GeoFixDataStore {
     Calendar prevDay;
     prevDay = prevRecordDay(dateRange.getStartDay());
     if (prevDay != null) {
-      if (dateRange.isSingleDay())
-        dateRange.setEndDay(prevDay);
-      dateRange.setStartDay(prevDay);
+      dateRange.setEndDay(prevDay);
     }
   }
 

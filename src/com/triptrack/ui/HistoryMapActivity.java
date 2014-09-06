@@ -16,7 +16,6 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.widget.Button;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.google.android.gms.maps.GoogleMap;
@@ -54,8 +53,17 @@ public class HistoryMapActivity extends Activity {
   private DateRange dateRange = new DateRange();
 
   @Override
+  public void onSaveInstanceState(Bundle outState) {
+    outState.putLong("startDay", dateRange.getStartDay().getTimeInMillis());
+    outState.putLong("endDay", dateRange.getEndDay().getTimeInMillis());
+    outState.putBoolean("drawMarkers", markersButton.isChecked());
+    super.onSaveInstanceState(outState);
+  }
+
+  @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
     setContentView(com.triptrack.R.layout.history_map_activity);
     geoFixDataStore.open();
 
@@ -87,6 +95,14 @@ public class HistoryMapActivity extends Activity {
     drawButton = (Button) findViewById(R.id.draw);
     earliestDayButton = (Button) findViewById(R.id.earliest);
     todayButton = (Button) findViewById(R.id.today);
+
+    // Check whether we're recreating a previously destroyed instance
+    if (savedInstanceState != null) {
+      dateRange = new DateRange();
+      dateRange.setStartDay(savedInstanceState.getLong("startDay"));
+      dateRange.setEndDay(savedInstanceState.getLong("endDay"));
+      markersButton.setChecked(savedInstanceState.getBoolean("drawMarkers"));
+    }
 
     map.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
       @Override
@@ -191,18 +207,9 @@ public class HistoryMapActivity extends Activity {
 
   private void drawFixes(DateRange dateRange, boolean drawMarkers) {
     Cursor c = geoFixDataStore.getGeoFixesByDateRange(dateRange);
-    FixVisualizer fixVisualizer = new FixVisualizer(c, this, map, drawMarkers);
+    FixVisualizer fixVisualizer = new FixVisualizer(
+        c, this, map, datePicker, dateRange, drawMarkers);
     fixVisualizer.draw();
-
-    datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
-        + "\n" + fixVisualizer.numFarAwayFixes() + " out of "
-        + c.getCount());
-    if (fixVisualizer.numFarAwayFixes() == 0) {
-      Toast.makeText(
-          this,
-          "no location during this period of time",
-          Toast.LENGTH_SHORT).show();
-    }
   }
 
   private void fadeOutButtons() {

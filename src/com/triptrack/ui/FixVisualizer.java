@@ -1,15 +1,19 @@
 package com.triptrack.ui;
 
+import com.triptrack.DateRange;
+import com.triptrack.Fix;
 import com.triptrack.R;
 import com.triptrack.datastore.GeoFixDataStore;
 import com.triptrack.util.CalendarUtils;
 import com.triptrack.util.Constants;
+import com.triptrack.util.ToStringHelper;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.location.Location;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -25,20 +29,21 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 
-class FixVisualizer {
+public class FixVisualizer {
   private static final String TAG = "FixVisualizer";
   private static final int MAX_NUM_MARKERS = 500;
   private static final BitmapDescriptor MARKER_ICON =
       BitmapDescriptorFactory.fromResource(R.drawable.marker);
 
   private HistoryMapActivity mapActivity;
-  private GoogleMap map;
   private ArrayList<Fix> fixes = new ArrayList<>();
   private HashMap<String, Long> markerIdToUtc = new HashMap<>();
+  private Cursor rows;
+  private GoogleMap map;
+  private Button datePicker;
+  private DateRange dateRange;
   private boolean drawMarkers;
 
   private double maxLat = -90;
@@ -46,71 +51,32 @@ class FixVisualizer {
   private double rightLng = 0;
   private double leftLng = 0;
 
-  public void draw() {
-    if (fixes.size() == 0) {
-      map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(0, 0), 3));
-      return;
-    }
-
-    if (drawMarkers && fixes.size() > MAX_NUM_MARKERS) {
-      drawMarkers = false;
-      Toast.makeText(mapActivity, "Too many fixes (" + fixes.size() + ").\n"
-          + "Markers will not be drawn.", Toast.LENGTH_SHORT).show();
-    }
-    map.clear();
-
-    PolylineOptions lineOpt = new PolylineOptions()
-        .width(4).color(Color.argb(128, 0, 0, 255));
-    for (Fix fix : fixes) {
-      lineOpt.add(fix.latLng);
-      CircleOptions circleOpt = new CircleOptions()
-          .center(fix.latLng)
-          .radius(fix.acc)
-          .strokeWidth(2)
-          .strokeColor(Color.argb(128, 255 - fix.freshness, fix.freshness, 0));
-      map.addCircle(circleOpt);
-
-      if (drawMarkers) {
-        Marker marker = map.addMarker(new MarkerOptions()
-            .position(fix.latLng)
-            .title(utcToString(fix.utc))
-            .snippet(fixToString(fix))
-            .icon(MARKER_ICON));
-        markerIdToUtc.put(marker.getId(), fix.utc);
-      }
-    }
-    map.addPolyline(lineOpt);
-
-    map.moveCamera(CameraUpdateFactory.newLatLngBounds(new LatLngBounds(
-        new LatLng(minLat, leftLng), new LatLng(maxLat, rightLng)), 50));
-  }
-
-  private String utcToString(long utc) {
-    Calendar c = new GregorianCalendar();
-    c.setTimeInMillis(utc);
-    return CalendarUtils.dateToString(c) + " "
-        + String.format("%02d", c.get(Calendar.HOUR_OF_DAY)) + ":"
-        + String.format("%02d", c.get(Calendar.MINUTE)) + ":"
-        + String.format("%02d", c.get(Calendar.SECOND));
-  }
-
-  private String fixToString(Fix point) {
-    return String.format("%1$,.5f", point.latLng.latitude) + ", "
-        + String.format("%1$,.5f", point.latLng.longitude) + " ("
-        + String.format("%1$,.3f", point.acc) + "m)";
-  }
-
   public FixVisualizer(
-      Cursor rows, HistoryMapActivity mapActivity,
+      Cursor rows,
+      HistoryMapActivity mapActivity,
       GoogleMap map,
+      Button datePicker,
+      DateRange dateRange,
       boolean drawMarkers) {
+    this.rows = rows;
     this.mapActivity = mapActivity;
     this.map = map;
+    this.datePicker = datePicker;
+    this.dateRange = dateRange;
     this.drawMarkers = drawMarkers;
+  }
 
-    this.map.setOnInfoWindowClickListener(new FixDeleter());
+  public void draw() {
+    map.setOnInfoWindowClickListener(new FixDeleter());
 
     if (!rows.moveToLast()) {
+      map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(0, 0), 3));
+      Toast.makeText(
+          mapActivity,
+          "no location during this period of time",
+          Toast.LENGTH_SHORT).show();
+      datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
+          + "\n0 out of 0");
       return;
     }
 
@@ -185,25 +151,42 @@ class FixVisualizer {
     }
 
     rows.close();
-  }
 
-  public int numFarAwayFixes() {
-    return fixes.size();
-  }
-
-  class Fix {
-    public
-    LatLng latLng;
-    long utc;
-    float acc;
-    int freshness;
-
-    Fix(long utc, double lat, double lng, float acc, int freshness) {
-      latLng = new LatLng(lat, lng);
-      this.utc = utc;
-      this.acc = acc;
-      this.freshness = freshness;
+    if (drawMarkers && fixes.size() > MAX_NUM_MARKERS) {
+      drawMarkers = false;
+      Toast.makeText(mapActivity, "Too many fixes (" + fixes.size() + ").\n"
+          + "Markers will not be drawn.", Toast.LENGTH_SHORT).show();
     }
+    map.clear();
+
+    PolylineOptions lineOpt = new PolylineOptions()
+        .width(4).color(Color.argb(128, 0, 0, 255));
+    for (Fix fix : fixes) {
+      lineOpt.add(fix.latLng);
+      CircleOptions circleOpt = new CircleOptions()
+          .center(fix.latLng)
+          .radius(fix.acc)
+          .strokeWidth(2)
+          .strokeColor(Color.argb(128, 255 - fix.freshness, fix.freshness, 0));
+      map.addCircle(circleOpt);
+
+      if (drawMarkers) {
+        Marker marker = map.addMarker(new MarkerOptions()
+            .position(fix.latLng)
+            .title(ToStringHelper.utcToString(fix.utc))
+            .snippet(ToStringHelper.latLngAccToString(
+                fix.latLng.latitude, fix.latLng.longitude, fix.acc))
+            .icon(MARKER_ICON));
+        markerIdToUtc.put(marker.getId(), fix.utc);
+      }
+    }
+    map.addPolyline(lineOpt);
+
+    map.moveCamera(CameraUpdateFactory.newLatLngBounds(new LatLngBounds(
+        new LatLng(minLat, leftLng), new LatLng(maxLat, rightLng)), 50));
+
+    datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
+        + "\n" + fixes.size() + " out of " + rows.getCount());
   }
 
   class FixDeleter implements GoogleMap.OnInfoWindowClickListener {

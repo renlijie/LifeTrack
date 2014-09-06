@@ -48,7 +48,8 @@
         android:layout_height="80dp"
         android:layout_width="200dp"
         android:layout_centerHorizontal="true"
-        android:layout_alignParentTop="true"/>
+        android:layout_alignParentTop="true"
+        android:text="drawing..."/>
 
     <!-- calendar dashboard: invisible by default -->
     <com.squareup.timessquare.CalendarPickerView

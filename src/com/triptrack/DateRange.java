@@ -30,6 +30,22 @@ public class DateRange {
     }
   }
 
+  public void setStartDay(long millis) {
+    startDay.setTimeInMillis(millis);
+    CalendarUtils.toBeginningOfDay(startDay);
+    if (!endDay.after(startDay)) {
+      endDay.setTime(startDay.getTime());
+    }
+  }
+
+  public void setEndDay(long millis) {
+    endDay.setTimeInMillis(millis);
+    CalendarUtils.toBeginningOfDay(endDay);
+    if (!endDay.after(startDay)) {
+      startDay.setTime(endDay.getTime());
+    }
+  }
+
   public Calendar getStartDay() {
     return startDay;
   }

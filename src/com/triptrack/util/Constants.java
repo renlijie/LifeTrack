@@ -4,6 +4,7 @@ package com.triptrack.util;
  * constants used in TripTrack
  */
 public final class Constants {
+  private Constants() {}
 
   /**
    * application-level tag

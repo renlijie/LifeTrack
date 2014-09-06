@@ -6,6 +6,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
 public class CalendarUtils {
+  private CalendarUtils() {}
+
   private static final SimpleDateFormat DATE_FORMAT =
       new SimpleDateFormat("yyyy/MM/dd, EEE");
 
