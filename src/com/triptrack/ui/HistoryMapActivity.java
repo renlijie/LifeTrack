@@ -263,7 +263,7 @@ public class HistoryMapActivity extends Activity {
             ? CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime()
             : earliestDay.getTime(),
         tomorrow.getTime())
-        .inMode(CalendarPickerView.SelectionMode.SELECTED_PERIOD);
+        .inMode(CalendarPickerView.SelectionMode.RANGE);
     calendarView.selectDate(dateRange.getStartDay().getTime());
     calendarView.selectDate(dateRange.getEndDay().getTime());
 

@@ -1,0 +1,3 @@
+[submodule "library/android-times-square"]
+	path = library/android-times-square
+	url = git://github.com/square/android-times-square.git

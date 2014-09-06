@@ -17,9 +17,9 @@
     </content>
     <orderEntry type="jdk" jdkName="Android 4.4.2 Google APIs (x86 System Image)" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="calendar_view" />
     <orderEntry type="module" module-name="google-play-services_lib" />
     <orderEntry type="library" name="google-play-services" level="project" />
+    <orderEntry type="module" module-name="CalendarView" />
   </component>
 </module>
 
