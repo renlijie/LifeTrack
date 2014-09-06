@@ -51,11 +51,13 @@ public final class ControlPanelActivity extends Activity {
     setContentView(R.layout.control_panel_activity);
 
     // SharedPreferences reader and writer.
-    final SharedPreferences settings = getSharedPreferences(Constants.PREFS_FILE, MODE_PRIVATE);
+    final SharedPreferences settings =
+        getSharedPreferences(Constants.PREFS_FILE, MODE_PRIVATE);
     final SharedPreferences.Editor editor = settings.edit();
 
     // ToggleButton for enabling/disabling the app.
-    final ToggleButton toggleButton = (ToggleButton) findViewById(R.id.recording_switch);
+    final ToggleButton toggleButton =
+        (ToggleButton) findViewById(R.id.recording_switch);
     toggleButton.setChecked(settings.getBoolean(Constants.ENABLED, false));
     toggleButton.setOnClickListener(new OnClickListener() {
       @Override
@@ -67,7 +69,8 @@ public final class ControlPanelActivity extends Activity {
           final int intervalMins = settings.getInt(Constants.INTERVAL_MINS,
               Constants.DEFAULT_INTERVAL_MINS);
           // Start the alarm.
-          LocationRecordingSwitch.startRecording(ControlPanelActivity.this, intervalMins);
+          LocationRecordingSwitch.startRecording(
+              ControlPanelActivity.this, intervalMins);
         } else {
           // Write the enabling status to SharedPreferences.
           while (!editor.putBoolean(Constants.ENABLED, false).commit()) ;
@@ -93,8 +96,10 @@ public final class ControlPanelActivity extends Activity {
 
         // Display a dialog containing the EditText view.
         new AlertDialog.Builder(ControlPanelActivity.this)
-            .setTitle(ControlPanelActivity.this.getString(R.string.set_interval))
-            .setMessage(ControlPanelActivity.this.getString(R.string.set_interval_direction))
+            .setTitle(
+                ControlPanelActivity.this.getString(R.string.set_interval))
+            .setMessage(ControlPanelActivity.this.getString(
+                R.string.set_interval_direction))
             .setView(setIntervalET)
             .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
               @Override
@@ -109,29 +114,34 @@ public final class ControlPanelActivity extends Activity {
                   }
                 } catch (NumberFormatException e) {
                   Toast.makeText(ControlPanelActivity.this,
-                      ControlPanelActivity.this.getString(R.string.set_interval_invalid),
+                      ControlPanelActivity.this.getString(
+                          R.string.set_interval_invalid),
                       Toast.LENGTH_SHORT).show();
                   return;
                 }
                 // If interval is not changed, return.
                 if (newIntervalMins == intervalMins) {
                   Toast.makeText(ControlPanelActivity.this,
-                      ControlPanelActivity.this.getString(R.string.set_interval_not_changed)
+                      ControlPanelActivity.this.getString(
+                          R.string.set_interval_not_changed)
                           + " " + Integer.toString(intervalMins) + " mins.",
                       Toast.LENGTH_SHORT).show();
                   return;
                 }
                 // Write the new interval to SharedPreferences.
-                while (!editor.putInt(Constants.INTERVAL_MINS, newIntervalMins).commit())
-                  ;
+                while (!editor.putInt(Constants.INTERVAL_MINS, newIntervalMins)
+                    .commit());
                 Toast.makeText(ControlPanelActivity.this,
-                    ControlPanelActivity.this.getString(R.string.set_interval_changed)
+                    ControlPanelActivity.this.getString(
+                        R.string.set_interval_changed)
                         + " " + Integer.toString(newIntervalMins) + " mins.",
                     Toast.LENGTH_SHORT).show();
                 // If the alarm is activated, restart it with the new interval.
                 if (settings.getBoolean(Constants.ENABLED, false)) {
-                  LocationRecordingSwitch.stopRecording(ControlPanelActivity.this);
-                  LocationRecordingSwitch.startRecording(ControlPanelActivity.this, newIntervalMins);
+                  LocationRecordingSwitch.stopRecording(
+                      ControlPanelActivity.this);
+                  LocationRecordingSwitch.startRecording(
+                      ControlPanelActivity.this, newIntervalMins);
                 }
               }
             })
@@ -145,7 +155,8 @@ public final class ControlPanelActivity extends Activity {
     });
 
     // ProgressDialog used in export/import.
-    final ProgressDialog progressBar = new ProgressDialog(ControlPanelActivity.this);
+    final ProgressDialog progressBar =
+        new ProgressDialog(ControlPanelActivity.this);
     progressBar.setCancelable(false);
     progressBar.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 
@@ -154,7 +165,10 @@ public final class ControlPanelActivity extends Activity {
       public void handleMessage(Message msg) {
         switch (msg.what) {
           case Constants.HANDLER_TOAST: {
-            Toast.makeText(ControlPanelActivity.this, (String) msg.obj, Toast.LENGTH_LONG).show();
+            Toast.makeText(
+                ControlPanelActivity.this,
+                (String) msg.obj,
+                Toast.LENGTH_LONG).show();
             break;
           }
           case Constants.HANDLER_PROGRESSBAR_DISMISS: {
@@ -183,7 +197,7 @@ public final class ControlPanelActivity extends Activity {
       public void onClick(View v) {
         // External file to read.
         File sdCard = Environment.getExternalStorageDirectory();
-        final File file = new File(sdCard, Constants.HISTORY_FILE);
+        final File file = new File(sdCard, Constants.HISTORY_FILE + ".csv");
         // Confirmation dialog.
         new AlertDialog.Builder(ControlPanelActivity.this)
             .setMessage(ControlPanelActivity.this.getString(R.string.import_confirmation) + "\n" + file)
@@ -223,7 +237,8 @@ public final class ControlPanelActivity extends Activity {
     exportButton.setOnClickListener(new OnClickListener() {
       @Override
       public void onClick(View v) {
-        GeoFixDataStore geoFixDataStore = new GeoFixDataStore(ControlPanelActivity.this);
+        GeoFixDataStore geoFixDataStore =
+            new GeoFixDataStore(ControlPanelActivity.this);
         geoFixDataStore.open();
         Cursor c = geoFixDataStore.getRecentGeoFixes(100);
         String history = "";
@@ -235,7 +250,8 @@ public final class ControlPanelActivity extends Activity {
             Calendar calendar = new GregorianCalendar();
             calendar.setTimeInMillis(c.getLong((c.getColumnIndex(Constants.KEY_UTC))));
 
-            res.append(String.format("%02d", (calendar.get(Calendar.MONTH) + 1)))
+            res.append(String.format("%04d", calendar.get(Calendar.YEAR)))
+                .append("/").append(String.format("%02d", (calendar.get(Calendar.MONTH) + 1)))
                 .append("/").append(String.format("%02d", calendar.get(Calendar.DATE)))
                 .append(", ").append(String.format("%02d", calendar.get(Calendar.HOUR_OF_DAY)))
                 .append(":").append(String.format("%02d", calendar.get(Calendar.MINUTE)))
@@ -252,9 +268,15 @@ public final class ControlPanelActivity extends Activity {
         }
         geoFixDataStore.close();
 
+        Calendar calendar = new GregorianCalendar();
+        String today = String.format("%04d", calendar.get(Calendar.YEAR)) + "-"
+            + String.format("%02d", (calendar.get(Calendar.MONTH) + 1)) + "-"
+            + String.format("%02d", calendar.get(Calendar.DATE));
+
         // File to write.
         File sdCard = Environment.getExternalStorageDirectory();
-        final File file = new File(sdCard, Constants.HISTORY_FILE);
+        final File file = new File(
+            sdCard, Constants.HISTORY_FILE + "-" + today + ".csv");
         // Confirmation dialog.
         new AlertDialog.Builder(ControlPanelActivity.this)
             .setMessage(ControlPanelActivity.this.getString(
@@ -265,10 +287,10 @@ public final class ControlPanelActivity extends Activity {
               public void onClick(DialogInterface dialog, int id) {
                 progressBar.setMessage(ControlPanelActivity.this.getString(
                     R.string.export_in_progress));
-                // Create a thread for exporting, although it's much faster than importing.
                 new Thread(new Runnable() {
                   public void run() {
-                    final GeoFixDataStore geoFixDataStore = new GeoFixDataStore(ControlPanelActivity.this);
+                    final GeoFixDataStore geoFixDataStore =
+                        new GeoFixDataStore(ControlPanelActivity.this);
                     geoFixDataStore.open();
                     geoFixDataStore.exportToFile(file, uiHandler);
                     geoFixDataStore.close();
@@ -282,8 +304,11 @@ public final class ControlPanelActivity extends Activity {
             .setNegativeButton("No", new DialogInterface.OnClickListener() {
               @Override
               public void onClick(DialogInterface dialog, int id) {
-                Toast.makeText(ControlPanelActivity.this, ControlPanelActivity.this.getString(
-                    R.string.export_canceled), Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                    ControlPanelActivity.this,
+                    ControlPanelActivity.this.getString(
+                        R.string.export_canceled),
+                    Toast.LENGTH_SHORT).show();
                 dialog.cancel();
               }
             }).show();
@@ -302,7 +327,8 @@ public final class ControlPanelActivity extends Activity {
             .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
               @Override
               public void onClick(DialogInterface dialog, int id) {
-                final GeoFixDataStore geoFixDataStore = new GeoFixDataStore(ControlPanelActivity.this);
+                final GeoFixDataStore geoFixDataStore =
+                    new GeoFixDataStore(ControlPanelActivity.this);
                 // Clear the history.
                 geoFixDataStore.open();
                 geoFixDataStore.clearHistory();

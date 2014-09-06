@@ -8,6 +8,7 @@ import com.triptrack.util.CalendarUtils;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.View;
@@ -15,9 +16,9 @@ import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.widget.Button;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -87,7 +88,12 @@ public class HistoryMapActivity extends Activity {
     earliestDayButton = (Button) findViewById(R.id.earliest);
     todayButton = (Button) findViewById(R.id.today);
 
-    updateDrawing(0, markersButton.isChecked());
+    map.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+      @Override
+      public void onMapLoaded() {
+        updateDrawing(0, markersButton.isChecked());
+      }
+    });
 
     fadeOutButtons();
 
@@ -183,31 +189,24 @@ public class HistoryMapActivity extends Activity {
     drawFixes(dateRange, drawMarkers);
   }
 
-  void drawFixes(DateRange dateRange, boolean drawMarkers) {
-//    Cursor c = geoFixDataStore.getGeoFixesByDateRange(dateRange);
-//    FixOverlay fixOverlay = (FixOverlay) (mapOverlays.get(mapOverlays.size() - 1));
-//    if (fixOverlay != null)
-//      fixOverlay.close();
-//    mapOverlays.remove(mapOverlays.size() - 1);
-//    FixOverlay f = new FixOverlay(c, this, drawMarkers);
-//    mapOverlays.add(f);
-//    datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
-//        + "\n" + f.numFarAwayFixes() + " out of "
-//        + c.getCount());
-//    if (f.numFarAwayFixes() == 0) {
-//      Toast.makeText(this, "no location during this period of time", Toast.LENGTH_SHORT).show();
-//    }
-//    zoomToFit(f);
-  }
+  private void drawFixes(DateRange dateRange, boolean drawMarkers) {
+    Cursor c = geoFixDataStore.getGeoFixesByDateRange(dateRange);
+    FixVisualizer fixVisualizer = new FixVisualizer(c, this, map, drawMarkers);
+    fixVisualizer.draw();
 
-  void zoomToFit(FixOverlay f) {
-    double cenLatE6 = f.getCenLat() * 1E6;
-    double cenLngE6 = f.getCenLng() * 1E6;
-    map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(cenLatE6, cenLngE6), 3));
+    datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
+        + "\n" + fixVisualizer.numFarAwayFixes() + " out of "
+        + c.getCount());
+    if (fixVisualizer.numFarAwayFixes() == 0) {
+      Toast.makeText(
+          this,
+          "no location during this period of time",
+          Toast.LENGTH_SHORT).show();
+    }
   }
 
   private void fadeOutButtons() {
-    Animation buttonFadeOut = new AlphaAnimation(1.0f, 0.0f);
+    Animation buttonFadeOut = new AlphaAnimation(0.6f, 0.0f);
     buttonFadeOut.setStartOffset(2000);
     buttonFadeOut.setDuration(2000);
     buttonFadeOut.setAnimationListener(new AnimationListener() {
