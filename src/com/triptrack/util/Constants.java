@@ -39,12 +39,10 @@ public final class Constants {
   /**
    * keys for a geo fix's UTC, latitude, longitude and accuracy in DB
    */
-  public static final String KEY_UTC = "utc";
-  public static final String COL_LAT = "lat";
-  public static final String COL_LNG = "lng";
-  public static final String COL_ACC = "acc";
-  public static final String COL_USER_MOVED = "moved";
-  public static final String COL_LOCAL_DATE = "localdate";
+  public static final String KEY_UTC = "utc"; // long
+  public static final String COL_LAT = "lat"; // double
+  public static final String COL_LNG = "lng"; // double
+  public static final String COL_ACC = "acc"; // float
 
   /**
    * maximum radius in meters of an acceptable fix in each category

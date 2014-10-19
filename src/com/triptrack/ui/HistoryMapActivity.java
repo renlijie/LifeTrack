@@ -91,7 +91,7 @@ public class HistoryMapActivity extends Activity {
     map.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
       @Override
       public void onMapLoaded() {
-        updateDrawing(0, markersButton.isChecked());
+        updateDrawing(markersButton.isChecked());
       }
     });
 
@@ -115,7 +115,7 @@ public class HistoryMapActivity extends Activity {
     markersButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        updateDrawing(0, markersButton.isChecked());
+        updateDrawing(markersButton.isChecked());
         fadeOutButtons();
       }
     });
@@ -123,7 +123,8 @@ public class HistoryMapActivity extends Activity {
     previousDayButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        updateDrawing(-1, markersButton.isChecked());
+        decreasePreviousDay();
+        updateDrawing(markersButton.isChecked());
         fadeOutButtons();
       }
     });
@@ -131,7 +132,8 @@ public class HistoryMapActivity extends Activity {
     nextDayButton.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        updateDrawing(1, markersButton.isChecked());
+        increaseNextDay();
+        updateDrawing(markersButton.isChecked());
         fadeOutButtons();
       }
     });
@@ -180,16 +182,27 @@ public class HistoryMapActivity extends Activity {
     super.onDestroy();
   }
 
-  void updateDrawing(int direction, boolean drawMarkers) {
-    if (direction == 1) {
-      geoFixDataStore.plusOneDay(dateRange);
-    } else if (direction == -1) {
-      geoFixDataStore.minusOneDay(dateRange);
-    }
+  public void updateDrawing(boolean drawMarkers) {
     drawFixes(dateRange, drawMarkers);
   }
 
-  private void drawFixes(DateRange dateRange, boolean drawMarkers) {
+  public void increaseNextDay() {
+    Calendar nextDay;
+    nextDay = geoFixDataStore.nextRecordDay(dateRange.getEndDay());
+    if (nextDay != null) {
+      dateRange.setStartDay(nextDay);
+    }
+  }
+
+  public void decreasePreviousDay() {
+    Calendar prevDay;
+    prevDay = geoFixDataStore.prevRecordDay(dateRange.getStartDay());
+    if (prevDay != null) {
+      dateRange.setEndDay(prevDay);
+    }
+  }
+
+  public void drawFixes(DateRange dateRange, boolean drawMarkers) {
     Cursor c = geoFixDataStore.getGeoFixesByDateRange(dateRange);
     FixVisualizer fixVisualizer = new FixVisualizer(
         c, this, map, datePicker, dateRange, drawMarkers);

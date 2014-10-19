@@ -19,10 +19,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+
 import com.triptrack.LocationRecordingSwitch;
 import com.triptrack_beta.R;
 import com.triptrack.datastore.GeoFixDataStore;
 import com.triptrack.util.Constants;
+import com.triptrack.util.Cursors;
 
 import java.io.File;
 import java.util.Calendar;
@@ -247,7 +249,7 @@ public final class ControlPanelActivity extends Activity {
 
           while (true) {
             Calendar calendar = new GregorianCalendar();
-            calendar.setTimeInMillis(c.getLong((c.getColumnIndex(Constants.KEY_UTC))));
+            calendar.setTimeInMillis(Cursors.getUtc(c));
 
             res.append(String.format("%04d", calendar.get(Calendar.YEAR)))
                 .append("/").append(String.format("%02d", (calendar.get(Calendar.MONTH) + 1)))
@@ -255,7 +257,7 @@ public final class ControlPanelActivity extends Activity {
                 .append(", ").append(String.format("%02d", calendar.get(Calendar.HOUR_OF_DAY)))
                 .append(":").append(String.format("%02d", calendar.get(Calendar.MINUTE)))
                 .append(":").append(String.format("%02d", calendar.get(Calendar.SECOND)))
-                .append(", ").append(c.getFloat(c.getColumnIndex(Constants.COL_ACC))).append("M\n");
+                .append(", ").append(Cursors.getAcc(c)).append("M\n");
 
             if (c.isLast()) {
               c.close();

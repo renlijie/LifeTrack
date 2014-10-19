@@ -5,14 +5,13 @@ import com.triptrack.Fix;
 import com.triptrack_beta.R;
 import com.triptrack.datastore.GeoFixDataStore;
 import com.triptrack.util.CalendarUtils;
-import com.triptrack.util.Constants;
+import com.triptrack.util.Cursors;
 import com.triptrack.util.ToStringHelper;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Color;
-import android.location.Location;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -28,7 +27,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 
 public class FixVisualizer {
@@ -45,11 +43,6 @@ public class FixVisualizer {
   private Button datePicker;
   private DateRange dateRange;
   private boolean drawMarkers;
-
-  private double maxLat = -90;
-  private double minLat = 90;
-  private double rightLng = 0;
-  private double leftLng = 0;
 
   public FixVisualizer(
       Cursor rows,
@@ -69,7 +62,7 @@ public class FixVisualizer {
   public void draw() {
     map.setOnInfoWindowClickListener(new FixDeleter());
 
-    if (!rows.moveToLast()) {
+    if (!rows.moveToLast()) { // move to the oldest fix.
       map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(0, 0), 3));
       Toast.makeText(
           mapActivity,
@@ -85,105 +78,57 @@ public class FixVisualizer {
 
     int index = 0;
     int freshness;
-    double preLat = 0, preLng = 0;
-    float[] results = new float[1];
-    boolean firstPoint = true;
+    LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
 
     while (true) {
-      double lat = rows.getDouble(rows.getColumnIndex(Constants.COL_LAT));
-      double lng = rows.getDouble(rows.getColumnIndex(Constants.COL_LNG));
-      float acc = rows.getFloat(rows.getColumnIndex(Constants.COL_ACC));
-      long utc = rows.getLong(rows.getColumnIndex(Constants.KEY_UTC));
+      double lat = Cursors.getLat(rows);
+      double lng = Cursors.getLng(rows);
+      float acc = Cursors.getAcc(rows);
+      long utc = Cursors.getUtc(rows);
 
-      if (firstPoint) {
-        firstPoint = false;
-      } else {
-        Location.distanceBetween(lat, lng, preLat, preLng, results);
-        if (results[0] <= acc) {
-          // Is a valid fix, but not drawing.
-          index++;
-          if (rows.isFirst()) {
-            break;
-          }
-          rows.moveToPrevious();
-          continue;
-        }
-      }
-      preLat = lat;
-      preLng = lng;
-
-      if (lat > maxLat)
-        maxLat = lat;
-      if (lat < minLat)
-        minLat = lat;
+      boundsBuilder.include(new LatLng(lat, lng));
 
       freshness = (int) (255 * (double) index++ / size);
       fixes.add(new Fix(utc, lat, lng, acc, freshness));
       lngList.add(lng);
 
       if (rows.isFirst()) {
+        rows.close();
         break;
       }
       rows.moveToPrevious();
     }
-
-    Double[] lngs = lngList.toArray(new Double[lngList.size()]);
-    Arrays.sort(lngs);
-
-    int idx = 0;
-    double diff = lngs[lngs.length - 1] - lngs[0];
-    if (diff > 180)
-      diff = 360 - diff;
-    for (int i = 1; i < lngs.length; i++) {
-      double d = lngs[i] - lngs[i - 1];
-      if (d > 180)
-        d = 360 - d;
-      if (diff < d) {
-        diff = d;
-        idx = i;
-      }
-    }
-    leftLng = lngs[idx];
-    if (idx == 0) {
-      rightLng = lngs[lngs.length - 1];
-    } else {
-      rightLng = lngs[idx - 1];
-    }
-
-    rows.close();
+    map.clear();
+    map.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), 50));
 
     if (drawMarkers && fixes.size() > MAX_NUM_MARKERS) {
       drawMarkers = false;
       Toast.makeText(mapActivity, "Too many fixes (" + fixes.size() + ").\n"
           + "Markers will not be drawn.", Toast.LENGTH_SHORT).show();
     }
-    map.clear();
 
     PolylineOptions lineOpt = new PolylineOptions()
         .width(4).color(Color.argb(128, 0, 0, 255));
     for (Fix fix : fixes) {
-      lineOpt.add(fix.latLng);
+      lineOpt.add(fix.getLatLng());
       CircleOptions circleOpt = new CircleOptions()
-          .center(fix.latLng)
-          .radius(fix.acc)
-          .strokeWidth(2)
-          .strokeColor(Color.argb(128, 255 - fix.freshness, fix.freshness, 0));
+          .center(fix.getLatLng())
+          .radius(fix.getAcc())
+          .strokeWidth(2);
+         // .strokeColor(Color.argb(128, 255 - fix.getFreshness(), fix.getFreshness(), 0));
       map.addCircle(circleOpt);
 
       if (drawMarkers) {
         Marker marker = map.addMarker(new MarkerOptions()
-            .position(fix.latLng)
-            .title(ToStringHelper.utcToString(fix.utc))
+            .position(fix.getLatLng())
+            .title(ToStringHelper.utcToString(fix.getUtc()))
             .snippet(ToStringHelper.latLngAccToString(
-                fix.latLng.latitude, fix.latLng.longitude, fix.acc))
+                fix.getLat(), fix.getLng(), fix.getAcc()))
             .icon(MARKER_ICON));
-        markerIdToUtc.put(marker.getId(), fix.utc);
+        markerIdToUtc.put(marker.getId(), fix.getUtc());
       }
     }
     map.addPolyline(lineOpt);
-
-    map.moveCamera(CameraUpdateFactory.newLatLngBounds(new LatLngBounds(
-        new LatLng(minLat, leftLng), new LatLng(maxLat, rightLng)), 50));
 
     datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
         + "\n" + fixes.size() + " out of " + rows.getCount());
@@ -209,7 +154,7 @@ public class FixVisualizer {
           geoFixDataStore.deleteGeoFix(utc);
         }
         geoFixDataStore.close();
-        FixVisualizer.this.mapActivity.updateDrawing(0, true);
+        FixVisualizer.this.mapActivity.updateDrawing(true);
         Toast.makeText(
             FixVisualizer.this.mapActivity,
             "deleted!",

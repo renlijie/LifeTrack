@@ -69,8 +69,4 @@ public class DateRange {
       startDay.setTime(endDay.getTime());
     }
   }
-
-  public boolean isSingleDay() {
-    return (startDay.compareTo(endDay) == 0);
-  }
 }

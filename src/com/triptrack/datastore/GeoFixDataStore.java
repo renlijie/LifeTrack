@@ -1,10 +1,5 @@
 package com.triptrack.datastore;
 
-import com.triptrack.DateRange;
-import com.triptrack.R;
-import com.triptrack.util.CalendarUtils;
-import com.triptrack.util.Constants;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -14,12 +9,14 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import com.triptrack.DateRange;
+import com.triptrack.Fix;
+import com.triptrack.util.CalendarUtils;
+import com.triptrack.util.Constants;
+import com.triptrack.util.Cursors;
+import com.triptrack_beta.R;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.Calendar;
 
 public class GeoFixDataStore {
@@ -31,14 +28,14 @@ public class GeoFixDataStore {
       Constants.KEY_UTC,
       Constants.COL_LAT,
       Constants.COL_LNG,
-      Constants.COL_ACC
+      Constants.COL_ACC,
   };
   private static final String CREATE_DATABASE =
       "create table " + DATABASE_TABLE + " ("
           + Constants.KEY_UTC + " long primary key, "
           + Constants.COL_LAT + " double, "
           + Constants.COL_LNG + " double, "
-          + Constants.COL_ACC + " single);";
+          + Constants.COL_ACC + " float);";
 
   private final Context context;
 
@@ -79,10 +76,9 @@ public class GeoFixDataStore {
   }
 
   public void exportToFile(File file, Handler uiHandler) {
-    // get all fixes
-    Cursor cursor = getRecentGeoFixes(0);
+    Cursor cursor = getAllGeoFixes();
 
-    if (cursor.moveToFirst()) {
+    if (cursor.moveToFirst()) { // oldest first
       FileOutputStream fos = null;
       try {
         fos = new FileOutputStream(file);
@@ -95,7 +91,7 @@ public class GeoFixDataStore {
 
         // write all fixes
         while (true) {
-          String geoFix = getStringFromEntry(cursor);
+          String geoFix = cursorToString(cursor);
           try {
             fos.write(geoFix.getBytes());
           } catch (IOException e) {
@@ -133,7 +129,6 @@ public class GeoFixDataStore {
                 uiHandler, Constants.HANDLER_TOAST, 0, 0,
                 "Closing " + file + " failed. Do you have access?"));
             Log.w(Constants.TAG + ":" + TAG, "Closing " + file + " failed.", e);
-            return;
           }
         }
       }
@@ -269,7 +264,6 @@ public class GeoFixDataStore {
       uiHandler.sendMessage(Message.obtain(uiHandler, Constants.HANDLER_TOAST,
           0, 0, "Operating " + file + " failed. Does it exist?"));
       Log.w(Constants.TAG + ":" + TAG, "Operating " + file + " failed.", e);
-      return;
     } finally {
       if (br != null) {
         try {
@@ -279,7 +273,6 @@ public class GeoFixDataStore {
               uiHandler, Constants.HANDLER_TOAST, 0, 0,
               "Closing " + file + " failed."));
           Log.w(Constants.TAG + ":" + TAG, "Closing " + file + " failed.", e);
-          return;
         }
       }
     }
@@ -290,8 +283,7 @@ public class GeoFixDataStore {
   }
 
   public void deleteGeoFix(long utc) {
-    database.delete(DATABASE_TABLE,
-        Constants.KEY_UTC + "=" + Long.toString(utc), null);
+    deleteByRange(utc, utc - 1);
   }
 
   public void deleteOneDay(long utc) {
@@ -304,41 +296,78 @@ public class GeoFixDataStore {
   }
 
   /**
-   * Write the fix into datastore.
+   * Deletes fixes in range [fromUtc, toUtc).
+   */
+  private void deleteByRange(long fromUtc, long toUtc) {
+    database.delete(
+        DATABASE_TABLE,
+        Constants.KEY_UTC + ">=? AND " + Constants.KEY_UTC + "<?",
+        new String[] {Long.toString(fromUtc), Long.toString(toUtc)});
+  }
+
+  /**
+   * Writes the fix into datastore.
    *
    * @throws SQLException when UTC already exists in datastore.
+   *
+   * TODO: encrypt
    */
-  // TODO: encrypt
-  public long insertGeoFixOrThrow(
-      long time, double latitude, double longitude, float accuracy) {
-    ContentValues initialValues = new ContentValues();
-    initialValues.put(Constants.KEY_UTC, time);
-    initialValues.put(Constants.COL_LAT, latitude);
-    initialValues.put(Constants.COL_LNG, longitude);
-    initialValues.put(Constants.COL_ACC, accuracy);
-    return database.insertOrThrow(DATABASE_TABLE, null, initialValues);
+  public void insertGeoFixOrThrow(
+      long utc, double latitude, double longitude, float accuracy) {
+    ContentValues newFix = new ContentValues();
+    newFix.put(Constants.KEY_UTC, utc);
+    newFix.put(Constants.COL_LAT, latitude);
+    newFix.put(Constants.COL_LNG, longitude);
+    newFix.put(Constants.COL_ACC, accuracy);
+    database.insertOrThrow(DATABASE_TABLE, null, newFix);
   }
 
-  // TODO: decrypt
   public Cursor getRecentGeoFixes(int size) {
-    if (size <= 0) {
-      return database.query(DATABASE_TABLE, DATABASE_COLUMNS, null, null, null,
-          null, Constants.KEY_UTC + " DESC", null);
-    }
-    return database.query(DATABASE_TABLE, DATABASE_COLUMNS, null, null, null,
-        null, Constants.KEY_UTC + " DESC", Integer.toString(size));
+    return database.query(
+        DATABASE_TABLE,
+        DATABASE_COLUMNS,
+        null, // selection
+        null, // selectinoArgs
+        null, // groupBy
+        null, // having
+        Constants.KEY_UTC + " DESC",
+        Integer.toString(size));
+  }
+
+  /**
+   * Returns all fixes from the oldest to the latest.
+   */
+  public Cursor getAllGeoFixes() {
+    return database.query(
+        DATABASE_TABLE,
+        DATABASE_COLUMNS,
+        null, // selection
+        null, // selectinoArgs
+        null, // groupBy
+        null, // having
+        Constants.KEY_UTC + " ASC",
+        null); // limit
   }
 
   // TODO: decrypt
+
+  /**
+   * Gets most recent to old fixes.
+   */
   public Cursor getGeoFixesByDateRange(DateRange dateRange) {
     long startMillis = dateRange.getStartDay().getTimeInMillis();
     long endMillis = dateRange.getEndDay().getTimeInMillis()
         + 24L * 3600 * 1000 - 1;
 
-    return database.query(DATABASE_TABLE, DATABASE_COLUMNS,
+    return database.query(
+        DATABASE_TABLE,
+        DATABASE_COLUMNS,
         Constants.KEY_UTC + " BETWEEN ? AND ?", // inclusive
-        new String[] { Long.toString(startMillis), Long.toString(endMillis) },
-        null, null, Constants.KEY_UTC + " DESC", null);
+        new String[] {Long.toString(startMillis), Long.toString(endMillis)},
+        null, // groupBy
+        null, // having
+        Constants.KEY_UTC + " DESC",
+        null); // limit
   }
 
   public Calendar prevRecordDay(Calendar calendar) {
@@ -353,58 +382,89 @@ public class GeoFixDataStore {
     return searchDayofGeoFix(Calendar.getInstance(), true, false);
   }
 
-  public void plusOneDay(DateRange dateRange) {
-    Calendar nextDay;
-    nextDay = nextRecordDay(dateRange.getEndDay());
-    if (nextDay != null) {
-      dateRange.setStartDay(nextDay);
-    }
-  }
-
-  public void minusOneDay(DateRange dateRange) {
-    Calendar prevDay;
-    prevDay = prevRecordDay(dateRange.getStartDay());
-    if (prevDay != null) {
-      dateRange.setEndDay(prevDay);
-    }
-  }
-
-  private void deleteByRange(long fromUtc, long toUtc) {
-    database.delete(DATABASE_TABLE, Constants.KEY_UTC + ">=" + fromUtc
-        + " AND " + Constants.KEY_UTC + "<" + toUtc, null);
-  }
-
-  private String getStringFromEntry(Cursor cursor) {
-    return Long.toString(cursor.getLong(
-        cursor.getColumnIndex(Constants.KEY_UTC))) + ","
-        + Double.toString(cursor.getDouble(
-        cursor.getColumnIndex(Constants.COL_LAT))) + ","
-        + Double.toString(cursor.getDouble(
-        cursor.getColumnIndex(Constants.COL_LNG))) + ","
-        + Float.toString(cursor.getFloat(
-        cursor.getColumnIndex(Constants.COL_ACC))) + "\n";
+  private String cursorToString(Cursor cursor) {
+    return Long.toString(Cursors.getUtc(cursor)) + ","
+        + Double.toString(Cursors.getLat(cursor)) + ","
+        + Double.toString(Cursors.getLng(cursor)) + ","
+        + Float.toString(Cursors.getAcc(cursor)) + "\n";
   }
 
   /**
-   * prev = true , desc = true : return day of the latest fix BEFORE date
-   * prev = false, desc = false: return day of the earliest fix AFTER date
-   * prev = true , desc = false: return day of the earliest fix in DB
-   * prev = false, desc = true : return day of the latest fix in DB
+   * prev = true , desc = true : returns the day of the latest fix BEFORE date.
+   * prev = false, desc = false: returns the day of the earliest fix AFTER date.
+   * prev = true , desc = false: returns the day of the earliest fix in DB.
+   * prev = false, desc = true : returns the day of the latest fix in DB.
    */
   private Calendar searchDayofGeoFix(Calendar date, boolean prev, boolean desc) {
-    Cursor cursor = database.query(DATABASE_TABLE, DATABASE_COLUMNS,
-        Constants.KEY_UTC + (prev ? " < ?" : " >= ?"),
-        new String[] {Long.toString(date.getTimeInMillis() + (prev ? 0 : (24L * 3600 * 1000)))},
-        null, null, Constants.KEY_UTC + (desc ? " DESC" : " ASC"), "1");
+    Cursor cursor = database.query(
+        DATABASE_TABLE,
+        DATABASE_COLUMNS,
+        Constants.KEY_UTC + (prev ? "<?" : ">=?"),
+        new String[] {Long.toString(
+            date.getTimeInMillis() + (prev ? 0 : (24L * 3600 * 1000)))},
+        null,
+        null,
+        Constants.KEY_UTC + (desc ? " DESC" : " ASC"),
+        "1");
     if (cursor.getCount() == 0) {
       cursor.close();
       return null;
     } else {
       cursor.moveToFirst();
       Calendar cal = Calendar.getInstance();
-      cal.setTimeInMillis(cursor.getLong(cursor.getColumnIndex(Constants.KEY_UTC)));
+      cal.setTimeInMillis(Cursors.getUtc(cursor));
       cursor.close();
       return CalendarUtils.toBeginningOfDay(cal);
+    }
+  }
+
+  /**
+   * Gets next Fix with UTC < utc.
+   */
+  private Fix getPreviousGeoFix(long utc) {
+    Cursor cursor = database.query(DATABASE_TABLE, DATABASE_COLUMNS,
+        Constants.KEY_UTC + " < ?", new String[] {Long.toString(utc)},
+        null, null, Constants.KEY_UTC + " DESC", "1");
+    if (cursor.getCount() == 0) {
+      cursor.close();
+      return null;
+    } else {
+      cursor.moveToFirst();
+      Fix fix = new Fix(
+          Cursors.getUtc(cursor),
+          Cursors.getLat(cursor),
+          Cursors.getLng(cursor),
+          Cursors.getAcc(cursor));
+      cursor.close();
+      return fix;
+    }
+  }
+
+  /**
+   * Gets next Fix with UTC > utc.
+   */
+  private Fix getNextGeoFix(long utc) {
+    Cursor cursor = database.query(
+        DATABASE_TABLE,
+        DATABASE_COLUMNS,
+        Constants.KEY_UTC + " >?",
+        new String[] {Long.toString(utc)},
+        null, // groupBy
+        null, // having
+        Constants.KEY_UTC + " ASC",
+        "1");
+    if (cursor.getCount() == 0) {
+      cursor.close();
+      return null;
+    } else {
+      cursor.moveToFirst();
+      Fix fix = new Fix(
+          Cursors.getUtc(cursor),
+          Cursors.getLat(cursor),
+          Cursors.getLng(cursor),
+          Cursors.getAcc(cursor));
+      cursor.close();
+      return fix;
     }
   }
 
