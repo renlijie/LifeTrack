@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/library/android-times-square/library/CalendarView.iml" filepath="$PROJECT_DIR$/library/android-times-square/library/CalendarView.iml" />
+      <module fileurl="file://$PROJECT_DIR$/TripTrack.iml" filepath="$PROJECT_DIR$/TripTrack.iml" />
+      <module fileurl="file://$PROJECT_DIR$/google-play-services_lib/google-play-services_lib.iml" filepath="$PROJECT_DIR$/google-play-services_lib/google-play-services_lib.iml" />
+    </modules>
+  </component>
+</project>
+

@@ -1,11 +1,5 @@
 package com.triptrack.ui;
 
-import com.squareup.timessquare.CalendarPickerView;
-import com.triptrack.DateRange;
-import com.triptrack.R;
-import com.triptrack.datastore.GeoFixDataStore;
-import com.triptrack.util.CalendarUtils;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
@@ -17,10 +11,14 @@ import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.widget.Button;
 import android.widget.ToggleButton;
-
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.squareup.timessquare.CalendarPickerView;
+import com.triptrack.DateRange;
+import com.triptrack.R;
+import com.triptrack.datastore.GeoFixDataStore;
+import com.triptrack.util.CalendarUtils;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -53,19 +51,10 @@ public class HistoryMapActivity extends Activity {
   private DateRange dateRange = new DateRange();
 
   @Override
-  public void onSaveInstanceState(Bundle outState) {
-    outState.putLong("startDay", dateRange.getStartDay().getTimeInMillis());
-    outState.putLong("endDay", dateRange.getEndDay().getTimeInMillis());
-    outState.putBoolean("drawMarkers", markersButton.isChecked());
-    super.onSaveInstanceState(outState);
-  }
-
-  @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     setContentView(com.triptrack.R.layout.history_map_activity);
-    geoFixDataStore.open();
 
     map = ((MapFragment) getFragmentManager().findFragmentById(R.id.map))
         .getMap();
@@ -73,6 +62,9 @@ public class HistoryMapActivity extends Activity {
       // TODO: show notification
       return;
     }
+
+    geoFixDataStore.open();
+
     map.setMyLocationEnabled(true);
     map.setTrafficEnabled(false);
     map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
@@ -95,14 +87,6 @@ public class HistoryMapActivity extends Activity {
     drawButton = (Button) findViewById(R.id.draw);
     earliestDayButton = (Button) findViewById(R.id.earliest);
     todayButton = (Button) findViewById(R.id.today);
-
-    // Check whether we're recreating a previously destroyed instance
-    if (savedInstanceState != null) {
-      dateRange = new DateRange();
-      dateRange.setStartDay(savedInstanceState.getLong("startDay"));
-      dateRange.setEndDay(savedInstanceState.getLong("endDay"));
-      markersButton.setChecked(savedInstanceState.getBoolean("drawMarkers"));
-    }
 
     map.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
       @Override

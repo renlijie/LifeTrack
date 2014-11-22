@@ -1,10 +1,5 @@
 package com.triptrack.ui;
 
-import com.triptrack.LocationRecordingSwitch;
-import com.triptrack.R;
-import com.triptrack.datastore.GeoFixDataStore;
-import com.triptrack.util.Constants;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -24,6 +19,10 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import android.widget.ToggleButton;
+import com.triptrack.LocationRecordingSwitch;
+import com.triptrack.R;
+import com.triptrack.datastore.GeoFixDataStore;
+import com.triptrack.util.Constants;
 
 import java.io.File;
 import java.util.Calendar;
