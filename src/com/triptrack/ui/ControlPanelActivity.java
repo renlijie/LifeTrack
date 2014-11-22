@@ -20,7 +20,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 import com.triptrack.LocationRecordingSwitch;
-import com.triptrack.R;
+import com.triptrack_beta.R;
 import com.triptrack.datastore.GeoFixDataStore;
 import com.triptrack.util.Constants;
 
@@ -196,7 +196,7 @@ public final class ControlPanelActivity extends Activity {
       public void onClick(View v) {
         // External file to read.
         File sdCard = Environment.getExternalStorageDirectory();
-        final File file = new File(sdCard, Constants.HISTORY_FILE + ".csv");
+        final File file = new File(sdCard, Constants.HISTORY_FILE + ".dat");
         // Confirmation dialog.
         new AlertDialog.Builder(ControlPanelActivity.this)
             .setMessage(ControlPanelActivity.this.getString(R.string.import_confirmation) + "\n" + file)
@@ -275,7 +275,7 @@ public final class ControlPanelActivity extends Activity {
         // File to write.
         File sdCard = Environment.getExternalStorageDirectory();
         final File file = new File(
-            sdCard, Constants.HISTORY_FILE + "-" + today + ".csv");
+            sdCard, Constants.HISTORY_FILE + "-" + today + ".dat");
         // Confirmation dialog.
         new AlertDialog.Builder(ControlPanelActivity.this)
             .setMessage(ControlPanelActivity.this.getString(

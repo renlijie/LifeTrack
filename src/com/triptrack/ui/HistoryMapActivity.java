@@ -16,9 +16,9 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.squareup.timessquare.CalendarPickerView;
 import com.triptrack.DateRange;
-import com.triptrack.R;
 import com.triptrack.datastore.GeoFixDataStore;
 import com.triptrack.util.CalendarUtils;
+import com.triptrack_beta.R;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -54,7 +54,7 @@ public class HistoryMapActivity extends Activity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    setContentView(com.triptrack.R.layout.history_map_activity);
+    setContentView(R.layout.history_map_activity);
 
     map = ((MapFragment) getFragmentManager().findFragmentById(R.id.map))
         .getMap();

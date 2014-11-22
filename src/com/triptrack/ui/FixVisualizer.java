@@ -2,7 +2,7 @@ package com.triptrack.ui;
 
 import com.triptrack.DateRange;
 import com.triptrack.Fix;
-import com.triptrack.R;
+import com.triptrack_beta.R;
 import com.triptrack.datastore.GeoFixDataStore;
 import com.triptrack.util.CalendarUtils;
 import com.triptrack.util.Constants;

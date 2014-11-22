@@ -24,7 +24,7 @@ public final class Constants {
   /**
    * name of the exported csv file
    */
-  public static final String HISTORY_FILE = "MyGeoFixHistory";
+  public static final String HISTORY_FILE = "FixHistory";
 
   /**
    * key to check whether location sample is enabled
