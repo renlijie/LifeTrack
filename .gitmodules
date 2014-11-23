@@ -1,3 +1,6 @@
-[submodule "library/android-times-square"]
-	path = library/android-times-square
+[submodule "libs/android-times-square"]
+	path = libs/android-times-square
 	url = git://github.com/square/android-times-square.git
+[submodule "libs/android-maps-utils"]
+	path = libs/android-maps-utils
+	url = git://github.com/renlijie/android-maps-utils.git

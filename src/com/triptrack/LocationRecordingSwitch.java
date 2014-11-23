@@ -1,8 +1,5 @@
 package com.triptrack;
 
-import com.triptrack.location.LocationSampler;
-import com.triptrack.util.Constants;
-
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -11,6 +8,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.widget.Toast;
+
+import com.triptrack.location.LocationSampler;
+import com.triptrack.util.Constants;
+import com.triptrack_beta.R;
 
 /**
  * A switch that controls the broadcast of periodic system alarms depending on

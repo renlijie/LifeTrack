@@ -36,8 +36,8 @@ public class FixVisualizer {
       BitmapDescriptorFactory.fromResource(R.drawable.marker);
 
   private HistoryMapActivity mapActivity;
-  private ArrayList<Fix> fixes = new ArrayList<>();
-  private HashMap<String, Long> markerIdToUtc = new HashMap<>();
+  private ArrayList<Fix> fixes = new ArrayList<Fix>();
+  private HashMap<String, Long> markerIdToUtc = new HashMap<String, Long>();
   private Cursor rows;
   private GoogleMap map;
   private Button datePicker;
@@ -73,7 +73,7 @@ public class FixVisualizer {
       return;
     }
 
-    ArrayList<Double> lngList = new ArrayList<>();
+    ArrayList<Double> lngList = new ArrayList<Double>();
     int size = rows.getCount();
 
     int index = 0;

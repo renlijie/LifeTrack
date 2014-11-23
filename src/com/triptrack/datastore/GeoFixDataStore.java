@@ -88,6 +88,9 @@ public class GeoFixDataStore {
         int numGeoFixesExported = 0;
         uiHandler.sendMessage(Message.obtain(uiHandler,
             Constants.HANDLER_PROGRESSBAR_SHOWMAX, cursor.getCount(), 0, null));
+        uiHandler.sendMessage(Message.obtain(
+            uiHandler, Constants.HANDLER_PROGRESSBAR_SETPROGRESS,
+            0, 0, null));
 
         // write all fixes
         while (true) {
@@ -172,6 +175,9 @@ public class GeoFixDataStore {
       // Show the progress bar.
       uiHandler.sendMessage(Message.obtain(uiHandler,
           Constants.HANDLER_PROGRESSBAR_SHOWMAX, numFixes, 0, null));
+      uiHandler.sendMessage(Message.obtain(
+          uiHandler, Constants.HANDLER_PROGRESSBAR_SETPROGRESS,
+          0, 0, null));
 
       long utc;
       double lat, lng;
@@ -242,8 +248,6 @@ public class GeoFixDataStore {
           numGoodFixes++;
         } catch (SQLException e) {
           numDuplicatedFixes++;
-          Log.w(Constants.TAG + ":" + TAG,
-              "Duplicate fix: #" + numImportedFixes, e);
         }
       }
 

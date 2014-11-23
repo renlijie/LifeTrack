@@ -38,10 +38,10 @@ public class HistoryMapActivity extends Activity {
   private Button settingsButton;
   private Button previousDayButton;
   private Button nextDayButton;
+  private ToggleButton markersButton;
 
   // Calendar Panel
   private CalendarPickerView calendarView;
-  private ToggleButton markersButton;
   private Button drawButton;
   private Button earliestDayButton;
   private Button todayButton;
@@ -227,7 +227,13 @@ public class HistoryMapActivity extends Activity {
       public void onAnimationRepeat(Animation a) {}
 
       @Override
-      public void onAnimationStart(Animation a) {}
+      public void onAnimationStart(Animation a) {
+        settingsButton.setVisibility(View.VISIBLE);
+        previousDayButton.setVisibility(View.VISIBLE);
+        nextDayButton.setVisibility(View.VISIBLE);
+        markersButton.setVisibility(View.VISIBLE);
+        datePicker.setVisibility(View.GONE);
+      }
     });
 
     settingsButton.startAnimation(buttonFadeOut);
@@ -239,7 +245,6 @@ public class HistoryMapActivity extends Activity {
 
   private void showMapPanel() {
     calendarView.setVisibility(View.GONE);
-    markersButton.setVisibility(View.GONE);
     drawButton.setVisibility(View.GONE);
     earliestDayButton.setVisibility(View.GONE);
     todayButton.setVisibility(View.GONE);
