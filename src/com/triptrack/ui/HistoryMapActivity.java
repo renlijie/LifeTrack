@@ -1,9 +1,9 @@
 package com.triptrack.ui;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
@@ -12,7 +12,7 @@ import android.view.animation.Animation.AnimationListener;
 import android.widget.Button;
 import android.widget.ToggleButton;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.squareup.timessquare.CalendarPickerView;
 import com.triptrack.DateRange;
@@ -29,7 +29,7 @@ import java.util.List;
  *
  * TODO: handle orientation changes by NOT re-drawing everything.
  */
-public class HistoryMapActivity extends Activity {
+public class HistoryMapActivity extends FragmentActivity {
   private static final String TAG = "HistoryMapActivity";
 
   // Map Panel
@@ -56,7 +56,7 @@ public class HistoryMapActivity extends Activity {
 
     setContentView(R.layout.history_map_activity);
 
-    map = ((MapFragment) getFragmentManager().findFragmentById(R.id.map))
+    map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
         .getMap();
     if (map == null) {
       // TODO: show notification
