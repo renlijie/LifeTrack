@@ -1,12 +1,11 @@
 package com.triptrack;
 
+import android.content.ContentValues;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.clustering.ClusterItem;
 import com.triptrack.util.Constants;
 
-import android.content.ContentValues;
-
-import com.google.android.gms.maps.model.LatLng;
-
-public class Fix {
+public class Fix extends ClusterItem {
   private LatLng latLng;
   private long utc;
   private float acc;
@@ -39,7 +38,8 @@ public class Fix {
     return latLng.longitude;
   }
 
-  public LatLng getLatLng() {
+  @Override
+  public LatLng getPosition() {
     return latLng;
   }
 

@@ -5,7 +5,7 @@
     android:versionName="2014.06.22" >
 
     <!-- Repeating alarm will become inexact in version 19 (Android 4.4) -->
-    <uses-sdk android:minSdkVersion="12" />
+    <uses-sdk android:minSdkVersion="13" />
 
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />

@@ -56,8 +56,7 @@ public class HistoryMapActivity extends FragmentActivity {
 
     setContentView(R.layout.history_map_activity);
 
-    map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map))
-        .getMap();
+    map = ((SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map)).getMap();
     if (map == null) {
       // TODO: show notification
       return;
@@ -88,37 +87,7 @@ public class HistoryMapActivity extends FragmentActivity {
     earliestDayButton = (Button) findViewById(R.id.earliest);
     todayButton = (Button) findViewById(R.id.today);
 
-    map.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
-      @Override
-      public void onMapLoaded() {
-        updateDrawing(markersButton.isChecked());
-      }
-    });
-
     fadeOutButtons();
-
-    datePicker.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View view) {
-        showCalendarPanel();
-      }
-    });
-
-    settingsButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        HistoryMapActivity.this.startActivity(
-            new Intent(HistoryMapActivity.this, ControlPanelActivity.class));
-      }
-    });
-
-    markersButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        updateDrawing(markersButton.isChecked());
-        fadeOutButtons();
-      }
-    });
 
     previousDayButton.setOnClickListener(new View.OnClickListener() {
       @Override
@@ -164,6 +133,8 @@ public class HistoryMapActivity extends FragmentActivity {
         calendarView.selectDate(CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime());
       }
     });
+
+    updateDrawing(markersButton.isChecked());
   }
 
   // Override BACK key's behavior.
@@ -253,7 +224,16 @@ public class HistoryMapActivity extends FragmentActivity {
     fadeOutButtons();
   }
 
-  private void showCalendarPanel() {
+  public void toggleMarkers(View v) {
+    updateDrawing(markersButton.isChecked());
+    fadeOutButtons();
+  }
+
+  public void showSettings(View v) {
+    startActivity(new Intent(this, ControlPanelActivity.class));
+  }
+
+  public void showCalendarPanel(View view) {
     datePicker.clearAnimation();
     settingsButton.clearAnimation();
     previousDayButton.clearAnimation();
@@ -282,7 +262,7 @@ public class HistoryMapActivity extends FragmentActivity {
   }
 
   private void setMapFragmentVisibility(int visibility) {
-    getFragmentManager().findFragmentById(R.id.map).getView()
+    getSupportFragmentManager().findFragmentById(R.id.map).getView()
         .setVisibility(visibility);
   }
 }
