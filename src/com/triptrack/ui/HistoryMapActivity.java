@@ -31,6 +31,8 @@ import java.util.List;
  */
 public class HistoryMapActivity extends FragmentActivity {
   private static final String TAG = "HistoryMapActivity";
+  private static final String START_DATE = "startDate";
+  private static final String END_DATE = "endDate";
 
   // Map Panel
   private GoogleMap map;
@@ -46,13 +48,25 @@ public class HistoryMapActivity extends FragmentActivity {
   private Button earliestDayButton;
   private Button todayButton;
 
-  // datastore and internal states
   private GeoFixDataStore geoFixDataStore = new GeoFixDataStore(this);
   private DateRange dateRange = new DateRange();
 
   @Override
+  public void onSaveInstanceState(Bundle savedInstanceState) {
+    savedInstanceState.putLong(START_DATE, dateRange.getStartDay().getTimeInMillis());
+    savedInstanceState.putLong(END_DATE, dateRange.getEndDay().getTimeInMillis());
+
+    super.onSaveInstanceState(savedInstanceState);
+  }
+
+  @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
+    if (savedInstanceState != null) {
+      dateRange.setStartDay(savedInstanceState.getLong(START_DATE));
+      dateRange.setEndDay(savedInstanceState.getLong(END_DATE));
+    }
 
     setContentView(R.layout.history_map_activity);
 
@@ -87,53 +101,6 @@ public class HistoryMapActivity extends FragmentActivity {
     earliestDayButton = (Button) findViewById(R.id.earliest);
     todayButton = (Button) findViewById(R.id.today);
 
-    fadeOutButtons();
-
-    previousDayButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        decreasePreviousDay();
-        updateDrawing(markersButton.isChecked());
-        fadeOutButtons();
-      }
-    });
-
-    nextDayButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        increaseNextDay();
-        updateDrawing(markersButton.isChecked());
-        fadeOutButtons();
-      }
-    });
-
-    drawButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        showMapPanel();
-        List<Date> dates = calendarView.getSelectedDates();
-        dateRange.setStartDay(dates.get(0));
-        dateRange.setEndDay(dates.get(dates.size() - 1));
-        drawFixes(dateRange, markersButton.isChecked());
-      }
-    });
-
-    earliestDayButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        Calendar day = geoFixDataStore.earliestRecordDay();
-        calendarView.selectDate(day == null ?
-            CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime() : day.getTime());
-      }
-    });
-
-    todayButton.setOnClickListener(new View.OnClickListener() {
-      @Override
-      public void onClick(View v) {
-        calendarView.selectDate(CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime());
-      }
-    });
-
     updateDrawing(markersButton.isChecked());
   }
 
@@ -154,7 +121,36 @@ public class HistoryMapActivity extends FragmentActivity {
   }
 
   public void updateDrawing(boolean drawMarkers) {
+    fadeOutButtons();
     drawFixes(dateRange, drawMarkers);
+  }
+
+  public void showPreviousDay(View v) {
+    decreasePreviousDay();
+    updateDrawing(markersButton.isChecked());
+  }
+
+  public void showNextDay(View v) {
+    increaseNextDay();
+    updateDrawing(markersButton.isChecked());
+  }
+
+  public void drawFixes(View v) {
+    showMapPanel();
+    List<Date> dates = calendarView.getSelectedDates();
+    dateRange.setStartDay(dates.get(0));
+    dateRange.setEndDay(dates.get(dates.size() - 1));
+    drawFixes(dateRange, markersButton.isChecked());
+  }
+
+  public void toEarliestDay(View v) {
+    Calendar day = geoFixDataStore.earliestRecordDay();
+    calendarView.selectDate(day == null ?
+        CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime() : day.getTime());
+  }
+
+  public void toToday(View v) {
+    calendarView.selectDate(CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime());
   }
 
   public void increaseNextDay() {
@@ -225,8 +221,7 @@ public class HistoryMapActivity extends FragmentActivity {
   }
 
   public void toggleMarkers(View v) {
-    updateDrawing(markersButton.isChecked());
-    fadeOutButtons();
+    // updateDrawing(markersButton.isChecked());
   }
 
   public void showSettings(View v) {
@@ -262,7 +257,6 @@ public class HistoryMapActivity extends FragmentActivity {
   }
 
   private void setMapFragmentVisibility(int visibility) {
-    getSupportFragmentManager().findFragmentById(R.id.map).getView()
-        .setVisibility(visibility);
+    getSupportFragmentManager().findFragmentById(R.id.map).getView().setVisibility(visibility);
   }
 }
