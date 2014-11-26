@@ -49,6 +49,7 @@ public class HistoryMapActivity extends FragmentActivity {
 
   private GeoFixDataStore geoFixDataStore = new GeoFixDataStore(this);
   private DateRange dateRange = new DateRange();
+  private FixVisualizer fixVisualizer;
 
   @Override
   public void onSaveInstanceState(Bundle savedInstanceState) {
@@ -99,6 +100,8 @@ public class HistoryMapActivity extends FragmentActivity {
     drawButton = (Button) findViewById(R.id.draw);
     earliestDayButton = (Button) findViewById(R.id.earliest);
     todayButton = (Button) findViewById(R.id.today);
+
+    fixVisualizer = new FixVisualizer(this, map, datePicker);
 
     drawFixes(markersButton.isChecked());
   }
@@ -166,16 +169,14 @@ public class HistoryMapActivity extends FragmentActivity {
 
   public void drawFixes(boolean drawMarkers) {
     Cursor c = geoFixDataStore.getGeoFixesByDateRange(dateRange);
-    FixVisualizer fixVisualizer = new FixVisualizer(
-        c, this, map, datePicker, dateRange, drawMarkers);
-    fixVisualizer.draw();
+    fixVisualizer.draw(c, dateRange, drawMarkers);
   }
 
   void fadeOutButtons() {
-    Animation buttonFadeOut = new AlphaAnimation(0.6f, 0.0f);
-    buttonFadeOut.setStartOffset(2000);
-    buttonFadeOut.setDuration(2000);
-    buttonFadeOut.setAnimationListener(new Animation.AnimationListener() {
+    Animation fadeOutAnimation = new AlphaAnimation(1.0f, 0.0f);
+    fadeOutAnimation.setStartOffset(2000);
+    fadeOutAnimation.setDuration(2000);
+    fadeOutAnimation.setAnimationListener(new Animation.AnimationListener() {
       @Override
       public void onAnimationEnd(Animation a) {
         datePicker.setVisibility(View.INVISIBLE);
@@ -186,7 +187,8 @@ public class HistoryMapActivity extends FragmentActivity {
       }
 
       @Override
-      public void onAnimationRepeat(Animation a) {}
+      public void onAnimationRepeat(Animation a) {
+      }
 
       @Override
       public void onAnimationStart(Animation a) {
@@ -198,11 +200,11 @@ public class HistoryMapActivity extends FragmentActivity {
       }
     });
 
-    datePicker.startAnimation(buttonFadeOut);
-    settingsButton.startAnimation(buttonFadeOut);
-    previousDayButton.startAnimation(buttonFadeOut);
-    nextDayButton.startAnimation(buttonFadeOut);
-    markersButton.startAnimation(buttonFadeOut);
+    datePicker.startAnimation(fadeOutAnimation);
+    settingsButton.startAnimation(fadeOutAnimation);
+    previousDayButton.startAnimation(fadeOutAnimation);
+    nextDayButton.startAnimation(fadeOutAnimation);
+    markersButton.startAnimation(fadeOutAnimation);
   }
 
   private void showMapPanel() {

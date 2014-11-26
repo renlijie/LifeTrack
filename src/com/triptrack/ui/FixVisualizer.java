@@ -33,25 +33,17 @@ public class FixVisualizer {
   private HistoryMapActivity mapActivity;
   private ArrayList<Fix> fixes = new ArrayList<Fix>();
   private HashMap<String, Long> markerIdToUtc = new HashMap<String, Long>();
-  private Cursor rows;
   private GoogleMap map;
   private Button datePicker;
   private DateRange dateRange;
-  private boolean drawMarkers;
 
   public FixVisualizer(
-      Cursor rows,
       HistoryMapActivity mapActivity,
       GoogleMap map,
-      Button datePicker,
-      DateRange dateRange,
-      boolean drawMarkers) {
-    this.rows = rows;
+      Button datePicker) {
     this.mapActivity = mapActivity;
     this.map = map;
     this.datePicker = datePicker;
-    this.dateRange = dateRange;
-    this.drawMarkers = drawMarkers;
     this.clusterManager = new ClusterManager<Fix>(mapActivity, map, new UserNotifier());
     map.setOnCameraChangeListener(clusterManager);
   }
@@ -64,13 +56,16 @@ public class FixVisualizer {
         datePicker.setText("Processing...");
       } else if (msg.what == ClusterManager.FINISHED_PROCESSING) {
         datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
-            + "\n" + fixes.size() + " out of " + rows.getCount());
+            + "\n" + fixes.size() + " out of " + fixes.size());
         mapActivity.fadeOutButtons();
       }
     }
   }
 
-  public void draw() {
+  public void draw(Cursor rows, DateRange dateRange, boolean drawMarkers) {
+    this.dateRange = dateRange;
+    fixes.clear();
+
     //map.setOnInfoWindowClickListener(new FixDeleter());
 
     if (!rows.moveToLast()) { // move to the oldest fix.
@@ -84,11 +79,10 @@ public class FixVisualizer {
       return;
     }
 
-//    ArrayList<Double> lngList = new ArrayList<Double>();
-//    int size = rows.getCount();
-
-//    int index = 0;
-//    int freshness;
+    // ArrayList<Double> lngList = new ArrayList<Double>();
+    // int size = rows.getCount();
+    // int index = 0;
+    // int freshness;
     LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
 
     while (true) {
@@ -99,9 +93,9 @@ public class FixVisualizer {
 
       boundsBuilder.include(new LatLng(lat, lng));
 
-//      freshness = (int) (255 * (double) index++ / size);
-      fixes.add(new Fix(utc, lat, lng, acc, 50));  // freshness
-//      lngList.add(lng);
+      // freshness = (int) (255 * (double) index++ / size);
+      // lngList.add(lng);
+      fixes.add(new Fix(utc, lat, lng, acc, 50));
 
       if (rows.isFirst()) {
         rows.close();
@@ -111,15 +105,17 @@ public class FixVisualizer {
     }
     map.clear();
 
+    clusterManager.clearItems();
     clusterManager.addItems(fixes);
 
     Display display = mapActivity.getWindowManager().getDefaultDisplay();
     Point displaySize = new Point();
     display.getSize(displaySize);
-    map.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), displaySize.x, displaySize.y, 50));
+    map.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), displaySize.x, displaySize.y, 100));
     if (map.getCameraPosition().zoom > MAX_ZOOM_LEVEL) {
       map.moveCamera(CameraUpdateFactory.zoomTo(MAX_ZOOM_LEVEL));
     }
+    clusterManager.cluster();
 
 //    PolylineOptions lineOpt = new PolylineOptions()
 //        .width(4).color(Color.argb(128, 0, 0, 255));
