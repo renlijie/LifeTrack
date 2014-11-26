@@ -4,7 +4,10 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.graphics.Point;
+import android.os.Handler;
+import android.os.Message;
 import android.view.Display;
+import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -49,8 +52,22 @@ public class FixVisualizer {
     this.datePicker = datePicker;
     this.dateRange = dateRange;
     this.drawMarkers = drawMarkers;
-    this.clusterManager = new ClusterManager<Fix>(mapActivity, map);
+    this.clusterManager = new ClusterManager<Fix>(mapActivity, map, new UserNotifier());
     map.setOnCameraChangeListener(clusterManager);
+  }
+
+  private class UserNotifier extends Handler {
+    @Override
+    public void handleMessage(Message msg) {
+      if (msg.what == ClusterManager.STARTED_PROCESSING) {
+        datePicker.setVisibility(View.VISIBLE);
+        datePicker.setText("Processing...");
+      } else if (msg.what == ClusterManager.FINISHED_PROCESSING) {
+        datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
+            + "\n" + fixes.size() + " out of " + rows.getCount());
+        mapActivity.fadeOutButtons();
+      }
+    }
   }
 
   public void draw() {
@@ -126,9 +143,6 @@ public class FixVisualizer {
 //      }
 //    }
 //    map.addPolyline(lineOpt);
-
-    datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
-        + "\n" + fixes.size() + " out of " + rows.getCount());
   }
 
   class FixDeleter implements GoogleMap.OnInfoWindowClickListener {
@@ -151,7 +165,7 @@ public class FixVisualizer {
           geoFixDataStore.deleteGeoFix(utc);
         }
         geoFixDataStore.close();
-        FixVisualizer.this.mapActivity.updateDrawing(true);
+        FixVisualizer.this.mapActivity.drawFixes(true);
         Toast.makeText(
             FixVisualizer.this.mapActivity,
             "deleted!",

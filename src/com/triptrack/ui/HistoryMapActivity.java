@@ -8,7 +8,6 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
 import android.widget.Button;
 import android.widget.ToggleButton;
 import com.google.android.gms.maps.GoogleMap;
@@ -101,7 +100,7 @@ public class HistoryMapActivity extends FragmentActivity {
     earliestDayButton = (Button) findViewById(R.id.earliest);
     todayButton = (Button) findViewById(R.id.today);
 
-    updateDrawing(markersButton.isChecked());
+    drawFixes(markersButton.isChecked());
   }
 
   // Override BACK key's behavior.
@@ -109,6 +108,7 @@ public class HistoryMapActivity extends FragmentActivity {
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     if (keyCode == KeyEvent.KEYCODE_BACK && (calendarView.getVisibility() == View.VISIBLE)) {
       showMapPanel();
+      fadeOutButtons();
       return true;
     }
     return super.onKeyDown(keyCode, event);
@@ -120,19 +120,14 @@ public class HistoryMapActivity extends FragmentActivity {
     super.onDestroy();
   }
 
-  public void updateDrawing(boolean drawMarkers) {
-    fadeOutButtons();
-    drawFixes(dateRange, drawMarkers);
-  }
-
   public void showPreviousDay(View v) {
     decreasePreviousDay();
-    updateDrawing(markersButton.isChecked());
+    drawFixes(markersButton.isChecked());
   }
 
   public void showNextDay(View v) {
     increaseNextDay();
-    updateDrawing(markersButton.isChecked());
+    drawFixes(markersButton.isChecked());
   }
 
   public void drawFixes(View v) {
@@ -140,7 +135,7 @@ public class HistoryMapActivity extends FragmentActivity {
     List<Date> dates = calendarView.getSelectedDates();
     dateRange.setStartDay(dates.get(0));
     dateRange.setEndDay(dates.get(dates.size() - 1));
-    drawFixes(dateRange, markersButton.isChecked());
+    drawFixes(markersButton.isChecked());
   }
 
   public void toEarliestDay(View v) {
@@ -169,25 +164,25 @@ public class HistoryMapActivity extends FragmentActivity {
     }
   }
 
-  public void drawFixes(DateRange dateRange, boolean drawMarkers) {
+  public void drawFixes(boolean drawMarkers) {
     Cursor c = geoFixDataStore.getGeoFixesByDateRange(dateRange);
     FixVisualizer fixVisualizer = new FixVisualizer(
         c, this, map, datePicker, dateRange, drawMarkers);
     fixVisualizer.draw();
   }
 
-  private void fadeOutButtons() {
+  void fadeOutButtons() {
     Animation buttonFadeOut = new AlphaAnimation(0.6f, 0.0f);
     buttonFadeOut.setStartOffset(2000);
     buttonFadeOut.setDuration(2000);
-    buttonFadeOut.setAnimationListener(new AnimationListener() {
+    buttonFadeOut.setAnimationListener(new Animation.AnimationListener() {
       @Override
       public void onAnimationEnd(Animation a) {
+        datePicker.setVisibility(View.INVISIBLE);
         settingsButton.setVisibility(View.INVISIBLE);
         previousDayButton.setVisibility(View.INVISIBLE);
         nextDayButton.setVisibility(View.INVISIBLE);
         markersButton.setVisibility(View.INVISIBLE);
-        datePicker.setVisibility(View.GONE);
       }
 
       @Override
@@ -195,19 +190,19 @@ public class HistoryMapActivity extends FragmentActivity {
 
       @Override
       public void onAnimationStart(Animation a) {
+        datePicker.setVisibility(View.VISIBLE);
         settingsButton.setVisibility(View.VISIBLE);
         previousDayButton.setVisibility(View.VISIBLE);
         nextDayButton.setVisibility(View.VISIBLE);
         markersButton.setVisibility(View.VISIBLE);
-        datePicker.setVisibility(View.GONE);
       }
     });
 
+    datePicker.startAnimation(buttonFadeOut);
     settingsButton.startAnimation(buttonFadeOut);
     previousDayButton.startAnimation(buttonFadeOut);
     nextDayButton.startAnimation(buttonFadeOut);
     markersButton.startAnimation(buttonFadeOut);
-    datePicker.startAnimation(buttonFadeOut);
   }
 
   private void showMapPanel() {
@@ -217,7 +212,6 @@ public class HistoryMapActivity extends FragmentActivity {
     todayButton.setVisibility(View.GONE);
 
     setMapFragmentVisibility(View.VISIBLE);
-    fadeOutButtons();
   }
 
   public void toggleMarkers(View v) {
@@ -236,7 +230,6 @@ public class HistoryMapActivity extends FragmentActivity {
     markersButton.clearAnimation();
 
     setMapFragmentVisibility(View.INVISIBLE);
-    settingsButton.setVisibility(View.GONE);
 
     Calendar tomorrow = Calendar.getInstance();
     tomorrow.add(Calendar.DATE, 1);
