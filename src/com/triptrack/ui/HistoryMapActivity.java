@@ -187,8 +187,7 @@ public class HistoryMapActivity extends FragmentActivity {
       }
 
       @Override
-      public void onAnimationRepeat(Animation a) {
-      }
+      public void onAnimationRepeat(Animation a) {}
 
       @Override
       public void onAnimationStart(Animation a) {
@@ -241,7 +240,7 @@ public class HistoryMapActivity extends FragmentActivity {
             ? CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime()
             : earliestDay.getTime(),
         tomorrow.getTime())
-        .inMode(CalendarPickerView.SelectionMode.RANGE);
+        .inMode(CalendarPickerView.SelectionMode.SELECTED_PERIOD);
     calendarView.selectDate(dateRange.getStartDay().getTime());
     calendarView.selectDate(dateRange.getEndDay().getTime());
 
