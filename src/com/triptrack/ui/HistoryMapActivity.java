@@ -23,11 +23,13 @@ import com.squareup.timessquare.CalendarPickerView;
 import com.triptrack.DateRange;
 import com.triptrack.Fix;
 import com.triptrack.datastore.GeoFixDataStore;
-import com.triptrack.messaging.MessageType;
+import com.triptrack.support.AsyncTaskResult;
+import com.triptrack.support.MessageType;
 import com.triptrack.util.CalendarUtils;
 import com.triptrack.util.Cursors;
 import com.triptrack_beta.R;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -58,8 +60,12 @@ public class HistoryMapActivity extends FragmentActivity {
   private GeoFixDataStore geoFixDataStore;
   private DateRange dateRange = new DateRange();
   private boolean isProcessing = false;
+  // TODO(renlijie): make it thread-safe.
+  private List<Fix> fixes;
 
   private ClusterManager<Fix> clusterManager;
+  private GetDataCursorTask getDataCursorTask = null;
+  private ReadDataTask readDataTask = null;
 
   private class UserNotifier extends Handler {
     @Override
@@ -68,6 +74,8 @@ public class HistoryMapActivity extends FragmentActivity {
         case MessageType.STARTED_PROCESSING:
           datePicker.setVisibility(View.VISIBLE);
           datePicker.setText("Clustering...");
+          datePicker.clearAnimation();
+          datePicker.setVisibility(View.VISIBLE);
           isProcessing = true;
           break;
         case MessageType.FINISHED_PROCESSING:
@@ -79,7 +87,7 @@ public class HistoryMapActivity extends FragmentActivity {
         case MessageType.UPDATE_COUNTER:
           int count = msg.arg1;
           String remark;
-          if (count > 10000) {
+          if (count > 50000) {
             if (count > 100000) {
               remark = "(ಠ益ಠ) " + count + "!!";
             } else {
@@ -90,31 +98,53 @@ public class HistoryMapActivity extends FragmentActivity {
           }
           datePicker.setText("Fetching records from DB...\n" + remark);
           break;
+        case MessageType.INIT_ALGORITHM:
+          datePicker.setText("Feeding data to algorithm...");
+          break;
+        case MessageType.ERROR:
+          datePicker.setText("Internal error:\n" + msg.obj);
+          break;
         default:
           throw new RuntimeException("unknown message type: " + msg.what);
       }
     }
   }
 
-  private class GetDataCursorResult {
-    boolean isEmpty;
-    Cursor cursor;
-    GetDataCursorResult(boolean isEmpty, Cursor cursor) {
-      this.isEmpty = isEmpty;
-      this.cursor = cursor;
-    }
-  }
-
-  private class GetDataCursorTask extends AsyncTask<Void, Void, GetDataCursorResult> {
+  private class GetDataCursorTask extends AsyncTask<Void, Void, AsyncTaskResult<Cursor>> {
     @Override
-    protected GetDataCursorResult doInBackground(Void[] params) {
-      Cursor cursor = geoFixDataStore.getGeoFixesByDateRange(dateRange);
-      return new GetDataCursorResult(!cursor.moveToFirst(), cursor);
+    protected void onPreExecute () {
+      map.clear();
     }
 
     @Override
-    protected void onPostExecute(GetDataCursorResult result) {
-      if (result.isEmpty) {
+    //TODO(renlijie): cancel when changing date range.
+    protected AsyncTaskResult<Cursor> doInBackground(Void[] params) {
+      Cursor cursor = null;
+      try {
+        clusterManager.clearItems();
+        cursor = geoFixDataStore.getGeoFixesByDateRange(dateRange);
+        fixes = new ArrayList<>(cursor.getCount());
+        return new AsyncTaskResult(cursor);
+      } catch (Throwable e) {
+        if (cursor != null) {
+          cursor.close();
+        }
+        return new AsyncTaskResult(e);
+      }
+    }
+
+    @Override
+    protected void onPostExecute(AsyncTaskResult<Cursor> result) {
+      if (result.getError() != null) {
+        userNotifier.sendMessage(userNotifier.obtainMessage(
+            MessageType.ERROR, result.getError().getMessage()));
+        return;
+      }
+      if (isCancelled()) {
+        return;
+      }
+      Cursor cursor = result.getResult();
+      if (!cursor.moveToFirst()) {
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(0, 0), 3));
         Toast.makeText(
             HistoryMapActivity.this,
@@ -124,38 +154,63 @@ public class HistoryMapActivity extends FragmentActivity {
             + "\n0 markers + 0 clusters.");
         isProcessing = false;
       } else {
-        Cursor cursor = result.cursor;
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(
-            new LatLng(Cursors.getLat(cursor), Cursors.getLng(cursor)), 3));
-        new ReadDataTask().execute(cursor);
+            new LatLng(Cursors.getLat(cursor), Cursors.getLng(cursor)), 5));
+        if (readDataTask != null) {
+          readDataTask.cancel(true);
+        }
+        readDataTask = new ReadDataTask();
+        readDataTask.execute(cursor);
       }
     }
   }
 
-  private class ReadDataTask extends AsyncTask<Cursor, Void, Void> {
+  private class ReadDataTask extends AsyncTask<Cursor, Integer, AsyncTaskResult<Void>> {
     @Override
-    protected Void doInBackground(Cursor... params) {
-      int count = 0;
-      Cursor rows = params[0];
-      clusterManager.clearItems();
-      while (true) {
-        clusterManager.addItem(new Fix(Cursors.getLat(rows), Cursors.getLng(rows)));
-        count += 1;
-        if (count % 1000 == 0) {
-          userNotifier.sendMessage(userNotifier.obtainMessage(MessageType.UPDATE_COUNTER, count, 0));
+    //TODO(renlijie): cancel when changing date range.
+    protected AsyncTaskResult<Void> doInBackground(Cursor... params) {
+      Cursor cursor = null;
+      try {
+        int count = 0;
+        cursor = params[0];
+        while (true) {
+          fixes.add(Fix.fromCursor(cursor));
+          count += 1;
+          if (count % 1000 == 0) {
+            publishProgress(count);
+          }
+          if (!cursor.moveToNext()) {
+            break;
+          }
         }
-        if (rows.isLast()) {
-          rows.close();
-          break;
+        userNotifier.sendMessage(userNotifier.obtainMessage(MessageType.INIT_ALGORITHM, 0, 0));
+        clusterManager.addItems(fixes);
+        return new AsyncTaskResult(null);
+      } catch (Throwable e) {
+        return new AsyncTaskResult(e);
+      } finally {
+        if (cursor != null) {
+          cursor.close();
         }
-        rows.moveToNext();
       }
-      return null;
     }
 
     @Override
-    protected void onPostExecute(Void result) {
-      map.clear();
+    protected void onProgressUpdate(Integer... progress) {
+      userNotifier.sendMessage(userNotifier.obtainMessage(
+          MessageType.UPDATE_COUNTER, progress[0], 0));
+    }
+
+    @Override
+    protected void onPostExecute(AsyncTaskResult<Void> result) {
+      if (result.getError() != null) {
+        userNotifier.sendMessage(userNotifier.obtainMessage(
+            MessageType.ERROR, result.getError().getMessage()));
+        return;
+      }
+      if (isCancelled()) {
+        return;
+      }
       clusterManager.cluster();
     }
   }
@@ -238,20 +293,40 @@ public class HistoryMapActivity extends FragmentActivity {
   public void drawSelectedRange(View v) {
     showMapPanel();
     List<Date> dates = calendarView.getSelectedDates();
-    dateRange.setStartDay(dates.get(0));
-    dateRange.setEndDay(dates.get(dates.size() - 1));
 
+    DateRange newDateRange = new DateRange();
+    newDateRange.setStartDay(dates.get(0));
+    newDateRange.setEndDay(dates.get(dates.size() - 1));
+
+    if (newDateRange.getStartDay().equals(dateRange.getStartDay())
+        && newDateRange.getEndDay().equals(dateRange.getEndDay())) {
+      return;
+    }
+
+    dateRange = newDateRange;
     draw(markersButton.isChecked());
   }
 
   public void drawPreviousDay(View v) {
-    resetToPreviousDay();
-    draw(markersButton.isChecked());
+    if (resetToPreviousDay()) {
+      draw(markersButton.isChecked());
+    } else {
+      Toast.makeText(
+          this,
+          "No earlier fixe was recorded.",
+          Toast.LENGTH_SHORT).show();
+    }
   }
 
   public void drawNextDay(View v) {
-    resetToNextDay();
-    draw(markersButton.isChecked());
+    if (resetToNextDay()) {
+      draw(markersButton.isChecked());
+    } else {
+      Toast.makeText(
+          this,
+          "No later fixe was recorded.",
+          Toast.LENGTH_SHORT).show();
+    }
   }
 
   public void jumpToEarliestDay(View v) {
@@ -300,20 +375,24 @@ public class HistoryMapActivity extends FragmentActivity {
     calendarView.selectDate(CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime());
   }
 
-  private void resetToNextDay() {
+  private boolean resetToNextDay() {
     Calendar nextDay;
     nextDay = geoFixDataStore.nextRecordDay(dateRange.getEndDay());
     if (nextDay != null) {
       dateRange.setStartDay(nextDay);
+      return true;
     }
+    return false;
   }
 
-  private void resetToPreviousDay() {
+  private boolean resetToPreviousDay() {
     Calendar prevDay;
     prevDay = geoFixDataStore.prevRecordDay(dateRange.getStartDay());
     if (prevDay != null) {
       dateRange.setEndDay(prevDay);
+      return true;
     }
+    return false;
   }
 
   private void fadeOutButtons() {
@@ -371,6 +450,11 @@ public class HistoryMapActivity extends FragmentActivity {
     datePicker.setText("Fetching records from DB...");
     isProcessing = true;
     fadeOutButtons();
-    new GetDataCursorTask().execute();
+
+    if (getDataCursorTask != null) {
+      getDataCursorTask.cancel(true);
+    }
+    getDataCursorTask = new GetDataCursorTask();
+    getDataCursorTask.execute();
   }
 }
