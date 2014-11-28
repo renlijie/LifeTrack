@@ -3,20 +3,27 @@ package com.triptrack.ui;
 import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.FragmentActivity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.widget.Button;
+import android.widget.Toast;
 import android.widget.ToggleButton;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.clustering.ClusterManager;
 import com.squareup.timessquare.CalendarPickerView;
 import com.triptrack.DateRange;
+import com.triptrack.Fix;
 import com.triptrack.datastore.GeoFixDataStore;
 import com.triptrack.util.CalendarUtils;
+import com.triptrack.util.Cursors;
 import com.triptrack_beta.R;
 
 import java.util.Calendar;
@@ -49,7 +56,27 @@ public class HistoryMapActivity extends FragmentActivity {
 
   private GeoFixDataStore geoFixDataStore = new GeoFixDataStore(this);
   private DateRange dateRange = new DateRange();
-  private FixVisualizer fixVisualizer;
+ // private FixVisualizer fixVisualizer;
+  private boolean isProcessing = false;
+
+
+
+  private ClusterManager<Fix> clusterManager;
+
+  private class UserNotifier extends Handler {
+    @Override
+    public void handleMessage(Message msg) {
+      if (msg.what == ClusterManager.STARTED_PROCESSING) {
+        datePicker.setVisibility(View.VISIBLE);
+        datePicker.setText("Processing...");
+        isProcessing = true;
+      } else if (msg.what == ClusterManager.FINISHED_PROCESSING) {
+        datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
+            + "\n" + msg.arg1 + " markers + " + msg.arg2 + " clusters.");
+        fadeOutButtons();
+      }
+    }
+  }
 
   @Override
   public void onSaveInstanceState(Bundle savedInstanceState) {
@@ -75,6 +102,9 @@ public class HistoryMapActivity extends FragmentActivity {
       // TODO: show notification
       return;
     }
+    clusterManager = new ClusterManager<>(this, map, new UserNotifier());
+    map.setOnCameraChangeListener(clusterManager);
+
 
     geoFixDataStore.open();
 
@@ -101,9 +131,11 @@ public class HistoryMapActivity extends FragmentActivity {
     earliestDayButton = (Button) findViewById(R.id.earliest);
     todayButton = (Button) findViewById(R.id.today);
 
-    fixVisualizer = new FixVisualizer(this, map, datePicker);
+    //fixVisualizer = new FixVisualizer(this, map, datePicker);
+    draw(markersButton.isChecked());
 
-    drawFixes(markersButton.isChecked());
+
+
   }
 
   // Override BACK key's behavior.
@@ -125,12 +157,14 @@ public class HistoryMapActivity extends FragmentActivity {
 
   public void showPreviousDay(View v) {
     decreasePreviousDay();
-    drawFixes(markersButton.isChecked());
+
+    draw(markersButton.isChecked());
   }
 
   public void showNextDay(View v) {
     increaseNextDay();
-    drawFixes(markersButton.isChecked());
+
+    draw(markersButton.isChecked());
   }
 
   public void drawFixes(View v) {
@@ -138,7 +172,8 @@ public class HistoryMapActivity extends FragmentActivity {
     List<Date> dates = calendarView.getSelectedDates();
     dateRange.setStartDay(dates.get(0));
     dateRange.setEndDay(dates.get(dates.size() - 1));
-    drawFixes(markersButton.isChecked());
+
+    draw(markersButton.isChecked());
   }
 
   public void toEarliestDay(View v) {
@@ -165,11 +200,6 @@ public class HistoryMapActivity extends FragmentActivity {
     if (prevDay != null) {
       dateRange.setEndDay(prevDay);
     }
-  }
-
-  public void drawFixes(boolean drawMarkers) {
-    Cursor c = geoFixDataStore.getGeoFixesByDateRange(dateRange);
-    fixVisualizer.draw(c, dateRange, drawMarkers);
   }
 
   void fadeOutButtons() {
@@ -199,7 +229,9 @@ public class HistoryMapActivity extends FragmentActivity {
       }
     });
 
-    datePicker.startAnimation(fadeOutAnimation);
+    if (!isProcessing) {
+      datePicker.startAnimation(fadeOutAnimation);
+    }
     settingsButton.startAnimation(fadeOutAnimation);
     previousDayButton.startAnimation(fadeOutAnimation);
     nextDayButton.startAnimation(fadeOutAnimation);
@@ -252,5 +284,81 @@ public class HistoryMapActivity extends FragmentActivity {
 
   private void setMapFragmentVisibility(int visibility) {
     getSupportFragmentManager().findFragmentById(R.id.map).getView().setVisibility(visibility);
+  }
+
+
+
+
+  private void draw(boolean drawMarkers) {
+    Cursor rows = geoFixDataStore.getGeoFixesByDateRange(dateRange);
+ //   ArrayList<Fix> fixes = new ArrayList<>();
+
+    if (!rows.moveToLast()) { // move to the oldest fix.
+      map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(0, 0), 3));
+      Toast.makeText(
+          this,
+          "no location during this period of time",
+          Toast.LENGTH_SHORT).show();
+      datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
+          + "\n0 markers + 0 clusters.");
+      return;
+    }
+
+ //   LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+
+    clusterManager.clearItems();
+
+
+    while (true) {
+      double lat = Cursors.getLat(rows);
+      double lng = Cursors.getLng(rows);
+      float acc = Cursors.getAcc(rows);
+      long utc = Cursors.getUtc(rows);
+
+  //    boundsBuilder.include(new LatLng(lat, lng));
+
+ //     fixes.add(new Fix(utc, lat, lng, acc, 50));
+      clusterManager.addItem(new Fix(utc, lat, lng, acc));
+      if (rows.isFirst()) {
+        rows.close();
+        break;
+      }
+      rows.moveToPrevious();
+    }
+    map.clear();
+
+
+
+//    Display display = mapActivity.getWindowManager().getDefaultDisplay();
+//    Point displaySize = new Point();
+//    display.getSize(displaySize);
+//    map.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), displaySize.x, displaySize.y, 100));
+//    if (map.getCameraPosition().zoom > MAX_ZOOM_LEVEL) {
+//      map.moveCamera(CameraUpdateFactory.zoomTo(MAX_ZOOM_LEVEL));
+//    }
+    clusterManager.cluster();
+
+//    PolylineOptions lineOpt = new PolylineOptions()
+//        .width(4).color(Color.argb(128, 0, 0, 255));
+//    for (Fix fix : fixes) {
+//      lineOpt.add(fix.getPosition());
+//      CircleOptions circleOpt = new CircleOptions()
+//          .center(fix.getPosition())
+//          .radius(fix.getAcc())
+//          .strokeWidth(2);
+//         // .strokeColor(Color.argb(128, 255 - fix.getFreshness(), fix.getFreshness(), 0));
+//      map.addCircle(circleOpt);
+//
+//      if (drawMarkers) {
+//        Marker marker = map.addMarker(new MarkerOptions()
+//            .position(fix.getPosition())
+//            .title(ToStringHelper.utcToString(fix.getUtc()))
+//            .snippet(ToStringHelper.latLngAccToString(
+//                fix.getLat(), fix.getLng(), fix.getAcc()))
+//            .icon(MARKER_ICON));
+//        markerIdToUtc.put(marker.getId(), fix.getUtc());
+//      }
+//    }
+//    map.addPolyline(lineOpt);
   }
 }

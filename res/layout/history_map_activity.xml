@@ -59,7 +59,7 @@
         android:onClick="showCalendarPanel"
         android:layout_centerHorizontal="true"
         android:layout_alignParentTop="true"
-        android:text="drawing..."/>
+        android:text="TripTrack"/>
 
     <LinearLayout
         android:id="@+id/date_toolbar"

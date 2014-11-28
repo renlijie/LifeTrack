@@ -1,26 +1,24 @@
 package com.triptrack.ui;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
-import android.graphics.Point;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
-import android.view.Display;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.maps.android.clustering.ClusterManager;
 import com.triptrack.DateRange;
 import com.triptrack.Fix;
 import com.triptrack.datastore.GeoFixDataStore;
 import com.triptrack.util.CalendarUtils;
-import com.triptrack.util.Cursors;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +30,7 @@ public class FixVisualizer {
   private ClusterManager<Fix> clusterManager;
   private HistoryMapActivity mapActivity;
   private ArrayList<Fix> fixes = new ArrayList<Fix>();
-  private HashMap<String, Long> markerIdToUtc = new HashMap<String, Long>();
+  private HashMap<String, Long> markerIdToUtc = new HashMap<>();
   private GoogleMap map;
   private Button datePicker;
   private DateRange dateRange;
@@ -44,7 +42,7 @@ public class FixVisualizer {
     this.mapActivity = mapActivity;
     this.map = map;
     this.datePicker = datePicker;
-    this.clusterManager = new ClusterManager<Fix>(mapActivity, map, new UserNotifier());
+    this.clusterManager = new ClusterManager<>(mapActivity, map, new UserNotifier());
     map.setOnCameraChangeListener(clusterManager);
   }
 
@@ -62,8 +60,17 @@ public class FixVisualizer {
     }
   }
 
-  public void draw(Cursor rows, DateRange dateRange, boolean drawMarkers) {
+  public void draw(GeoFixDataStore dataStore, DateRange dateRange, boolean drawMarkers) {
     this.dateRange = dateRange;
+
+    class MyTask extends AsyncTask {
+      @Override
+      protected Object doInBackground(Object[] params) {
+        return null;
+      }
+    }
+
+    Cursor rows = dataStore.getGeoFixesByDateRange(dateRange);
     fixes.clear();
 
     //map.setOnInfoWindowClickListener(new FixDeleter());
@@ -83,39 +90,39 @@ public class FixVisualizer {
     // int size = rows.getCount();
     // int index = 0;
     // int freshness;
-    LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+//    LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+//
+//    while (true) {
+//      double lat = Cursors.getLat(rows);
+//      double lng = Cursors.getLng(rows);
+//      float acc = Cursors.getAcc(rows);
+//      long utc = Cursors.getUtc(rows);
+//
+//      boundsBuilder.include(new LatLng(lat, lng));
+//
+//      // freshness = (int) (255 * (double) index++ / size);
+//      // lngList.add(lng);
+//      fixes.add(new Fix(utc, lat, lng, acc, 50));
+//
+//      if (rows.isFirst()) {
+//        rows.close();
+//        break;
+//      }
+//      rows.moveToPrevious();
+//    }
+//    map.clear();
 
-    while (true) {
-      double lat = Cursors.getLat(rows);
-      double lng = Cursors.getLng(rows);
-      float acc = Cursors.getAcc(rows);
-      long utc = Cursors.getUtc(rows);
+//    clusterManager.clearItems();
+//    clusterManager.addItems(fixes);
 
-      boundsBuilder.include(new LatLng(lat, lng));
-
-      // freshness = (int) (255 * (double) index++ / size);
-      // lngList.add(lng);
-      fixes.add(new Fix(utc, lat, lng, acc, 50));
-
-      if (rows.isFirst()) {
-        rows.close();
-        break;
-      }
-      rows.moveToPrevious();
-    }
-    map.clear();
-
-    clusterManager.clearItems();
-    clusterManager.addItems(fixes);
-
-    Display display = mapActivity.getWindowManager().getDefaultDisplay();
-    Point displaySize = new Point();
-    display.getSize(displaySize);
-    map.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), displaySize.x, displaySize.y, 100));
-    if (map.getCameraPosition().zoom > MAX_ZOOM_LEVEL) {
-      map.moveCamera(CameraUpdateFactory.zoomTo(MAX_ZOOM_LEVEL));
-    }
-    clusterManager.cluster();
+//    Display display = mapActivity.getWindowManager().getDefaultDisplay();
+//    Point displaySize = new Point();
+//    display.getSize(displaySize);
+//    map.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), displaySize.x, displaySize.y, 100));
+//    if (map.getCameraPosition().zoom > MAX_ZOOM_LEVEL) {
+//      map.moveCamera(CameraUpdateFactory.zoomTo(MAX_ZOOM_LEVEL));
+//    }
+//    clusterManager.cluster();
 
 //    PolylineOptions lineOpt = new PolylineOptions()
 //        .width(4).color(Color.argb(128, 0, 0, 255));
@@ -150,10 +157,13 @@ public class FixVisualizer {
         this.utc = utc;
         this.deleteAllDay = deleteAllDay;
       }
+
       @Override
       public void onClick(DialogInterface dialog, int id) {
+        Context context = FixVisualizer.this.mapActivity;
+
         GeoFixDataStore geoFixDataStore =
-            new GeoFixDataStore(FixVisualizer.this.mapActivity);
+            new GeoFixDataStore(context);
         geoFixDataStore.open();
         if (deleteAllDay) {
           geoFixDataStore.deleteOneDay(utc);
@@ -161,9 +171,10 @@ public class FixVisualizer {
           geoFixDataStore.deleteGeoFix(utc);
         }
         geoFixDataStore.close();
-        FixVisualizer.this.mapActivity.drawFixes(true);
+
+        draw(geoFixDataStore, dateRange, true);
         Toast.makeText(
-            FixVisualizer.this.mapActivity,
+            context,
             "deleted!",
             Toast.LENGTH_SHORT).show();
       }
@@ -179,7 +190,8 @@ public class FixVisualizer {
     @Override
     public void onInfoWindowClick(Marker marker) {
       final long utc = markerIdToUtc.get(marker.getId());
-      new AlertDialog.Builder(FixVisualizer.this.mapActivity)
+      final Context context = FixVisualizer.this.mapActivity;
+      new AlertDialog.Builder(context)
           .setTitle(marker.getTitle())
           .setMessage(marker.getSnippet() + "\n\nPress BACK to cancel.")
           .setPositiveButton(
@@ -187,7 +199,7 @@ public class FixVisualizer {
               new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                  new AlertDialog.Builder(FixVisualizer.this.mapActivity)
+                  new AlertDialog.Builder(context)
                       .setTitle("Confirm").setMessage("DELETE?")
                       .setPositiveButton("Yes", new RealFixDeleter(utc, false))
                       .setNegativeButton("No", new DialogueCloser()).show();
@@ -198,7 +210,7 @@ public class FixVisualizer {
               new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                  new AlertDialog.Builder(FixVisualizer.this.mapActivity)
+                  new AlertDialog.Builder(context)
                       .setTitle("Confirm").setMessage("DELETE?")
                       .setPositiveButton("Yes", new RealFixDeleter(utc, true))
                       .setNegativeButton("No", new DialogueCloser()).show();

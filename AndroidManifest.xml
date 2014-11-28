@@ -5,6 +5,9 @@
     android:versionName="2014.06.22" >
 
     <!-- Repeating alarm will become inexact in version 19 (Android 4.4) -->
+    <!-- http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#ApiLevels -->
+    <!-- Android 3.2 (HONEYCOMB_MR2) -->
+
     <uses-sdk android:minSdkVersion="13" />
 
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -21,6 +24,7 @@
     <application
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name" >
+
         <uses-library android:name="com.google.android.maps" />
 
         <activity
@@ -29,8 +33,8 @@
         </activity>
 
         <activity
-            android:name="com.triptrack.ui.HistoryMapActivity">
-            android:theme="@android:style/Theme.NoTitleBar" >
+            android:name="com.triptrack.ui.HistoryMapActivity"
+            android:theme="@android:style/Theme.Holo.NoActionBar" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
