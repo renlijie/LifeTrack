@@ -6,6 +6,7 @@
       <module fileurl="file://$PROJECT_DIR$/libs/android-maps-utils/library/android-maps-utils.iml" filepath="$PROJECT_DIR$/libs/android-maps-utils/library/android-maps-utils.iml" />
       <module fileurl="file://$PROJECT_DIR$/libs/android-times-square/library/android-times-square.iml" filepath="$PROJECT_DIR$/libs/android-times-square/library/android-times-square.iml" />
       <module fileurl="file://$PROJECT_DIR$/libs/google-play-services_lib/google-play-services_lib.iml" filepath="$PROJECT_DIR$/libs/google-play-services_lib/google-play-services_lib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/libs/triptrack-message-passing/triptrack-message-passing.iml" filepath="$PROJECT_DIR$/libs/triptrack-message-passing/triptrack-message-passing.iml" />
     </modules>
   </component>
 </project>

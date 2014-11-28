@@ -23,6 +23,7 @@ import com.squareup.timessquare.CalendarPickerView;
 import com.triptrack.DateRange;
 import com.triptrack.Fix;
 import com.triptrack.datastore.GeoFixDataStore;
+import com.triptrack.messaging.MessageType;
 import com.triptrack.util.CalendarUtils;
 import com.triptrack.util.Cursors;
 import com.triptrack_beta.R;
@@ -38,9 +39,6 @@ public class HistoryMapActivity extends FragmentActivity {
   private static final String TAG = "HistoryMapActivity";
   private static final String START_DATE = "startDate";
   private static final String END_DATE = "endDate";
-
-  //TODO(renlijie): move this to a module
-  private static final int COUNTER = 3;
 
   // Map Panel
   private GoogleMap map;
@@ -67,17 +65,18 @@ public class HistoryMapActivity extends FragmentActivity {
     @Override
     public void handleMessage(Message msg) {
       switch (msg.what) {
-        case ClusterManager.STARTED_PROCESSING:
+        case MessageType.STARTED_PROCESSING:
           datePicker.setVisibility(View.VISIBLE);
           datePicker.setText("Clustering...");
+          isProcessing = true;
           break;
-        case ClusterManager.FINISHED_PROCESSING:
+        case MessageType.FINISHED_PROCESSING:
           datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
               + "\n" + msg.arg1 + " markers + " + msg.arg2 + " clusters.");
           isProcessing = false;
           fadeOutButtons();
           break;
-        case COUNTER:
+        case MessageType.UPDATE_COUNTER:
           int count = msg.arg1;
           String remark;
           if (count > 10000) {
@@ -97,15 +96,25 @@ public class HistoryMapActivity extends FragmentActivity {
     }
   }
 
-  private class GetDataCursorTask extends AsyncTask<Void, Void, Cursor> {
+  private class GetDataCursorResult {
+    boolean isEmpty;
+    Cursor cursor;
+    GetDataCursorResult(boolean isEmpty, Cursor cursor) {
+      this.isEmpty = isEmpty;
+      this.cursor = cursor;
+    }
+  }
+
+  private class GetDataCursorTask extends AsyncTask<Void, Void, GetDataCursorResult> {
     @Override
-    protected Cursor doInBackground(Void[] params) {
-      return geoFixDataStore.getGeoFixesByDateRange(dateRange);
+    protected GetDataCursorResult doInBackground(Void[] params) {
+      Cursor cursor = geoFixDataStore.getGeoFixesByDateRange(dateRange);
+      return new GetDataCursorResult(!cursor.moveToFirst(), cursor);
     }
 
     @Override
-    protected void onPostExecute(Cursor cursor) {
-      if (!cursor.moveToFirst()) {
+    protected void onPostExecute(GetDataCursorResult result) {
+      if (result.isEmpty) {
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(0, 0), 3));
         Toast.makeText(
             HistoryMapActivity.this,
@@ -115,6 +124,7 @@ public class HistoryMapActivity extends FragmentActivity {
             + "\n0 markers + 0 clusters.");
         isProcessing = false;
       } else {
+        Cursor cursor = result.cursor;
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(
             new LatLng(Cursors.getLat(cursor), Cursors.getLng(cursor)), 3));
         new ReadDataTask().execute(cursor);
@@ -132,7 +142,7 @@ public class HistoryMapActivity extends FragmentActivity {
         clusterManager.addItem(new Fix(Cursors.getLat(rows), Cursors.getLng(rows)));
         count += 1;
         if (count % 1000 == 0) {
-          userNotifier.sendMessage(userNotifier.obtainMessage(COUNTER, count, 0));
+          userNotifier.sendMessage(userNotifier.obtainMessage(MessageType.UPDATE_COUNTER, count, 0));
         }
         if (rows.isLast()) {
           rows.close();
