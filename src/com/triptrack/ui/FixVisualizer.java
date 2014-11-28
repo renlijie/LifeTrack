@@ -5,9 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Message;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -42,23 +39,23 @@ public class FixVisualizer {
     this.mapActivity = mapActivity;
     this.map = map;
     this.datePicker = datePicker;
-    this.clusterManager = new ClusterManager<>(mapActivity, map, new UserNotifier());
+//    this.clusterManager = new ClusterManager<>(mapActivity, map, new UserNotifier());
     map.setOnCameraChangeListener(clusterManager);
   }
 
-  private class UserNotifier extends Handler {
-    @Override
-    public void handleMessage(Message msg) {
-      if (msg.what == ClusterManager.STARTED_PROCESSING) {
-        datePicker.setVisibility(View.VISIBLE);
-        datePicker.setText("Processing...");
-      } else if (msg.what == ClusterManager.FINISHED_PROCESSING) {
-        datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
-            + "\n" + fixes.size() + " out of " + fixes.size());
-        mapActivity.fadeOutButtons();
-      }
-    }
-  }
+//  private class UserNotifier extends Handler {
+//    @Override
+//    public void handleMessage(Message msg) {
+//      if (msg.what == ClusterManager.STARTED_PROCESSING) {
+//        datePicker.setVisibility(View.VISIBLE);
+//        datePicker.setText("Processing...");
+//      } else if (msg.what == ClusterManager.FINISHED_PROCESSING) {
+//        datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
+//            + "\n" + fixes.size() + " out of " + fixes.size());
+//        mapActivity.fadeOutButtons();
+//      }
+//    }
+//  }
 
   public void draw(GeoFixDataStore dataStore, DateRange dateRange, boolean drawMarkers) {
     this.dateRange = dateRange;

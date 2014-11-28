@@ -30,6 +30,10 @@ public class Fix extends ClusterItem {
     this.acc = acc;
   }
 
+  public Fix(double lat, double lng) {
+    latLng = new LatLng(lat, lng);
+  }
+
   public double getLat() {
     return latLng.latitude;
   }

@@ -2,6 +2,7 @@ package com.triptrack.ui;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -32,13 +33,14 @@ import java.util.List;
 
 /**
  * Activity the user sees upon opening the app.
- *
- * TODO: handle orientation changes by NOT re-drawing everything.
  */
 public class HistoryMapActivity extends FragmentActivity {
   private static final String TAG = "HistoryMapActivity";
   private static final String START_DATE = "startDate";
   private static final String END_DATE = "endDate";
+
+  //TODO(renlijie): move this to a module
+  private static final int COUNTER = 3;
 
   // Map Panel
   private GoogleMap map;
@@ -54,32 +56,102 @@ public class HistoryMapActivity extends FragmentActivity {
   private Button earliestDayButton;
   private Button todayButton;
 
-  private GeoFixDataStore geoFixDataStore = new GeoFixDataStore(this);
+  private UserNotifier userNotifier;
+  private GeoFixDataStore geoFixDataStore;
   private DateRange dateRange = new DateRange();
- // private FixVisualizer fixVisualizer;
   private boolean isProcessing = false;
-
-
 
   private ClusterManager<Fix> clusterManager;
 
   private class UserNotifier extends Handler {
     @Override
     public void handleMessage(Message msg) {
-      if (msg.what == ClusterManager.STARTED_PROCESSING) {
-        datePicker.setVisibility(View.VISIBLE);
-        datePicker.setText("Processing...");
-        isProcessing = true;
-      } else if (msg.what == ClusterManager.FINISHED_PROCESSING) {
-        datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
-            + "\n" + msg.arg1 + " markers + " + msg.arg2 + " clusters.");
-        fadeOutButtons();
+      switch (msg.what) {
+        case ClusterManager.STARTED_PROCESSING:
+          datePicker.setVisibility(View.VISIBLE);
+          datePicker.setText("Clustering...");
+          break;
+        case ClusterManager.FINISHED_PROCESSING:
+          datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
+              + "\n" + msg.arg1 + " markers + " + msg.arg2 + " clusters.");
+          isProcessing = false;
+          fadeOutButtons();
+          break;
+        case COUNTER:
+          int count = msg.arg1;
+          String suffix;
+          if (count > 10000) {
+            if (count > 100000) {
+              suffix = "!!";
+            } else {
+              suffix = "!";
+            }
+          } else {
+            suffix = "";
+          }
+          datePicker.setText("Fetching records from DB...\n" + count + suffix);
+          break;
+        default:
+          throw new RuntimeException("unknown message type: " + msg.what);
       }
     }
   }
 
+  private class GetDataCursorTask extends AsyncTask<Void, Void, Cursor> {
+    @Override
+    protected Cursor doInBackground(Void[] params) {
+      return geoFixDataStore.getGeoFixesByDateRange(dateRange);
+    }
+
+    @Override
+    protected void onPostExecute(Cursor cursor) {
+      if (!cursor.moveToFirst()) {
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(0, 0), 3));
+        Toast.makeText(
+            HistoryMapActivity.this,
+            "no location during this period of time",
+            Toast.LENGTH_SHORT).show();
+        datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
+            + "\n0 markers + 0 clusters.");
+        isProcessing = false;
+      } else {
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(
+            new LatLng(Cursors.getLat(cursor), Cursors.getLng(cursor)), 3));
+        new ReadDataTask().execute(cursor);
+      }
+    }
+  }
+
+  private class ReadDataTask extends AsyncTask<Cursor, Void, Void> {
+    @Override
+    protected Void doInBackground(Cursor... params) {
+      int count = 0;
+      Cursor rows = params[0];
+      clusterManager.clearItems();
+      while (true) {
+        clusterManager.addItem(new Fix(Cursors.getLat(rows), Cursors.getLng(rows)));
+        count += 1;
+        if (count % 1000 == 0) {
+          userNotifier.sendMessage(userNotifier.obtainMessage(COUNTER, count, 0));
+        }
+        if (rows.isLast()) {
+          rows.close();
+          break;
+        }
+        rows.moveToNext();
+      }
+      return null;
+    }
+
+    @Override
+    protected void onPostExecute(Void result) {
+      map.clear();
+      clusterManager.cluster();
+    }
+  }
+
   @Override
-  public void onSaveInstanceState(Bundle savedInstanceState) {
+  protected void onSaveInstanceState(Bundle savedInstanceState) {
     savedInstanceState.putLong(START_DATE, dateRange.getStartDay().getTimeInMillis());
     savedInstanceState.putLong(END_DATE, dateRange.getEndDay().getTimeInMillis());
 
@@ -87,7 +159,7 @@ public class HistoryMapActivity extends FragmentActivity {
   }
 
   @Override
-  public void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     if (savedInstanceState != null) {
@@ -102,10 +174,12 @@ public class HistoryMapActivity extends FragmentActivity {
       // TODO: show notification
       return;
     }
-    clusterManager = new ClusterManager<>(this, map, new UserNotifier());
+
+    userNotifier = new UserNotifier();
+    clusterManager = new ClusterManager<>(this, map, userNotifier);
     map.setOnCameraChangeListener(clusterManager);
 
-
+    geoFixDataStore = new GeoFixDataStore(this);
     geoFixDataStore.open();
 
     map.setMyLocationEnabled(true);
@@ -131,11 +205,7 @@ public class HistoryMapActivity extends FragmentActivity {
     earliestDayButton = (Button) findViewById(R.id.earliest);
     todayButton = (Button) findViewById(R.id.today);
 
-    //fixVisualizer = new FixVisualizer(this, map, datePicker);
     draw(markersButton.isChecked());
-
-
-
   }
 
   // Override BACK key's behavior.
@@ -155,19 +225,7 @@ public class HistoryMapActivity extends FragmentActivity {
     super.onDestroy();
   }
 
-  public void showPreviousDay(View v) {
-    decreasePreviousDay();
-
-    draw(markersButton.isChecked());
-  }
-
-  public void showNextDay(View v) {
-    increaseNextDay();
-
-    draw(markersButton.isChecked());
-  }
-
-  public void drawFixes(View v) {
+  public void drawSelectedRange(View v) {
     showMapPanel();
     List<Date> dates = calendarView.getSelectedDates();
     dateRange.setStartDay(dates.get(0));
@@ -176,75 +234,21 @@ public class HistoryMapActivity extends FragmentActivity {
     draw(markersButton.isChecked());
   }
 
-  public void toEarliestDay(View v) {
+  public void drawPreviousDay(View v) {
+    resetToPreviousDay();
+    draw(markersButton.isChecked());
+  }
+
+  public void drawNextDay(View v) {
+    resetToNextDay();
+    draw(markersButton.isChecked());
+  }
+
+  public void jumpToEarliestDay(View v) {
     Calendar day = geoFixDataStore.earliestRecordDay();
-    calendarView.selectDate(day == null ?
-        CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime() : day.getTime());
-  }
-
-  public void toToday(View v) {
-    calendarView.selectDate(CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime());
-  }
-
-  public void increaseNextDay() {
-    Calendar nextDay;
-    nextDay = geoFixDataStore.nextRecordDay(dateRange.getEndDay());
-    if (nextDay != null) {
-      dateRange.setStartDay(nextDay);
-    }
-  }
-
-  public void decreasePreviousDay() {
-    Calendar prevDay;
-    prevDay = geoFixDataStore.prevRecordDay(dateRange.getStartDay());
-    if (prevDay != null) {
-      dateRange.setEndDay(prevDay);
-    }
-  }
-
-  void fadeOutButtons() {
-    Animation fadeOutAnimation = new AlphaAnimation(1.0f, 0.0f);
-    fadeOutAnimation.setStartOffset(2000);
-    fadeOutAnimation.setDuration(2000);
-    fadeOutAnimation.setAnimationListener(new Animation.AnimationListener() {
-      @Override
-      public void onAnimationEnd(Animation a) {
-        datePicker.setVisibility(View.INVISIBLE);
-        settingsButton.setVisibility(View.INVISIBLE);
-        previousDayButton.setVisibility(View.INVISIBLE);
-        nextDayButton.setVisibility(View.INVISIBLE);
-        markersButton.setVisibility(View.INVISIBLE);
-      }
-
-      @Override
-      public void onAnimationRepeat(Animation a) {}
-
-      @Override
-      public void onAnimationStart(Animation a) {
-        datePicker.setVisibility(View.VISIBLE);
-        settingsButton.setVisibility(View.VISIBLE);
-        previousDayButton.setVisibility(View.VISIBLE);
-        nextDayButton.setVisibility(View.VISIBLE);
-        markersButton.setVisibility(View.VISIBLE);
-      }
-    });
-
-    if (!isProcessing) {
-      datePicker.startAnimation(fadeOutAnimation);
-    }
-    settingsButton.startAnimation(fadeOutAnimation);
-    previousDayButton.startAnimation(fadeOutAnimation);
-    nextDayButton.startAnimation(fadeOutAnimation);
-    markersButton.startAnimation(fadeOutAnimation);
-  }
-
-  private void showMapPanel() {
-    calendarView.setVisibility(View.GONE);
-    drawButton.setVisibility(View.GONE);
-    earliestDayButton.setVisibility(View.GONE);
-    todayButton.setVisibility(View.GONE);
-
-    setMapFragmentVisibility(View.VISIBLE);
+    calendarView.selectDate(day == null
+        ? CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime()
+        : day.getTime());
   }
 
   public void toggleMarkers(View v) {
@@ -282,83 +286,81 @@ public class HistoryMapActivity extends FragmentActivity {
     todayButton.setVisibility(View.VISIBLE);
   }
 
+  public void jumpToToday(View v) {
+    calendarView.selectDate(CalendarUtils.toBeginningOfDay(Calendar.getInstance()).getTime());
+  }
+
+  private void resetToNextDay() {
+    Calendar nextDay;
+    nextDay = geoFixDataStore.nextRecordDay(dateRange.getEndDay());
+    if (nextDay != null) {
+      dateRange.setStartDay(nextDay);
+    }
+  }
+
+  private void resetToPreviousDay() {
+    Calendar prevDay;
+    prevDay = geoFixDataStore.prevRecordDay(dateRange.getStartDay());
+    if (prevDay != null) {
+      dateRange.setEndDay(prevDay);
+    }
+  }
+
+  private void fadeOutButtons() {
+    Animation fadeOutAnimation = new AlphaAnimation(1.0f, 0.0f);
+    fadeOutAnimation.setStartOffset(2000);
+    fadeOutAnimation.setDuration(2000);
+    fadeOutAnimation.setAnimationListener(new Animation.AnimationListener() {
+      @Override
+      public void onAnimationEnd(Animation a) {
+        if (!isProcessing) {
+          datePicker.setVisibility(View.INVISIBLE);
+        }
+        settingsButton.setVisibility(View.INVISIBLE);
+        previousDayButton.setVisibility(View.INVISIBLE);
+        nextDayButton.setVisibility(View.INVISIBLE);
+        markersButton.setVisibility(View.INVISIBLE);
+      }
+
+      @Override
+      public void onAnimationRepeat(Animation a) {}
+
+      @Override
+      public void onAnimationStart(Animation a) {
+        datePicker.setVisibility(View.VISIBLE);
+        settingsButton.setVisibility(View.VISIBLE);
+        previousDayButton.setVisibility(View.VISIBLE);
+        nextDayButton.setVisibility(View.VISIBLE);
+        markersButton.setVisibility(View.VISIBLE);
+      }
+    });
+
+    if (!isProcessing) {
+      datePicker.startAnimation(fadeOutAnimation);
+    }
+    settingsButton.startAnimation(fadeOutAnimation);
+    previousDayButton.startAnimation(fadeOutAnimation);
+    nextDayButton.startAnimation(fadeOutAnimation);
+    markersButton.startAnimation(fadeOutAnimation);
+  }
+
+  private void showMapPanel() {
+    calendarView.setVisibility(View.GONE);
+    drawButton.setVisibility(View.GONE);
+    earliestDayButton.setVisibility(View.GONE);
+    todayButton.setVisibility(View.GONE);
+
+    setMapFragmentVisibility(View.VISIBLE);
+  }
+
   private void setMapFragmentVisibility(int visibility) {
     getSupportFragmentManager().findFragmentById(R.id.map).getView().setVisibility(visibility);
   }
 
-
-
-
   private void draw(boolean drawMarkers) {
-    Cursor rows = geoFixDataStore.getGeoFixesByDateRange(dateRange);
- //   ArrayList<Fix> fixes = new ArrayList<>();
-
-    if (!rows.moveToLast()) { // move to the oldest fix.
-      map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(0, 0), 3));
-      Toast.makeText(
-          this,
-          "no location during this period of time",
-          Toast.LENGTH_SHORT).show();
-      datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
-          + "\n0 markers + 0 clusters.");
-      return;
-    }
-
- //   LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
-
-    clusterManager.clearItems();
-
-
-    while (true) {
-      double lat = Cursors.getLat(rows);
-      double lng = Cursors.getLng(rows);
-      float acc = Cursors.getAcc(rows);
-      long utc = Cursors.getUtc(rows);
-
-  //    boundsBuilder.include(new LatLng(lat, lng));
-
- //     fixes.add(new Fix(utc, lat, lng, acc, 50));
-      clusterManager.addItem(new Fix(utc, lat, lng, acc));
-      if (rows.isFirst()) {
-        rows.close();
-        break;
-      }
-      rows.moveToPrevious();
-    }
-    map.clear();
-
-
-
-//    Display display = mapActivity.getWindowManager().getDefaultDisplay();
-//    Point displaySize = new Point();
-//    display.getSize(displaySize);
-//    map.moveCamera(CameraUpdateFactory.newLatLngBounds(boundsBuilder.build(), displaySize.x, displaySize.y, 100));
-//    if (map.getCameraPosition().zoom > MAX_ZOOM_LEVEL) {
-//      map.moveCamera(CameraUpdateFactory.zoomTo(MAX_ZOOM_LEVEL));
-//    }
-    clusterManager.cluster();
-
-//    PolylineOptions lineOpt = new PolylineOptions()
-//        .width(4).color(Color.argb(128, 0, 0, 255));
-//    for (Fix fix : fixes) {
-//      lineOpt.add(fix.getPosition());
-//      CircleOptions circleOpt = new CircleOptions()
-//          .center(fix.getPosition())
-//          .radius(fix.getAcc())
-//          .strokeWidth(2);
-//         // .strokeColor(Color.argb(128, 255 - fix.getFreshness(), fix.getFreshness(), 0));
-//      map.addCircle(circleOpt);
-//
-//      if (drawMarkers) {
-//        Marker marker = map.addMarker(new MarkerOptions()
-//            .position(fix.getPosition())
-//            .title(ToStringHelper.utcToString(fix.getUtc()))
-//            .snippet(ToStringHelper.latLngAccToString(
-//                fix.getLat(), fix.getLng(), fix.getAcc()))
-//            .icon(MARKER_ICON));
-//        markerIdToUtc.put(marker.getId(), fix.getUtc());
-//      }
-//    }
-//    map.addPolyline(lineOpt);
+    datePicker.setText("Fetching records from DB...");
+    isProcessing = true;
+    fadeOutButtons();
+    new GetDataCursorTask().execute();
   }
 }

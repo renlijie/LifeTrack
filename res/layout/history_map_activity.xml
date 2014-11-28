@@ -37,7 +37,7 @@
         android:layout_height="80dp"
         android:text="@string/previous_day"
         android:textSize="14dp"
-        android:onClick="showPreviousDay"
+        android:onClick="drawPreviousDay"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"/>
 
@@ -47,7 +47,7 @@
         android:layout_height="80dp"
         android:text="@string/next_day"
         android:textSize="14dp"
-        android:onClick="showNextDay"
+        android:onClick="drawNextDay"
         android:layout_alignParentBottom="true"
         android:layout_toRightOf="@+id/previous_day"/>
 
@@ -75,7 +75,7 @@
             android:layout_height="wrap_content"
             android:layout_weight=".3"
             android:visibility="gone"
-            android:onClick="toEarliestDay"
+            android:onClick="jumpToEarliestDay"
             android:textSize="16dp"
             android:text="@string/earliest_day" />
 
@@ -86,7 +86,7 @@
             android:layout_weight=".4"
             android:text="@string/draw"
             android:textSize="16dp"
-            android:onClick="drawFixes"
+            android:onClick="drawSelectedRange"
             android:visibility="gone" />
 
         <Button
@@ -95,7 +95,7 @@
             android:layout_height="wrap_content"
             android:layout_weight=".3"
             android:visibility="gone"
-            android:onClick="toToday"
+            android:onClick="jumpToToday"
             android:textSize="16dp"
             android:text="@string/today" />
     </LinearLayout>
