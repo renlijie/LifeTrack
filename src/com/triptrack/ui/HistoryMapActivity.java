@@ -79,17 +79,17 @@ public class HistoryMapActivity extends FragmentActivity {
           break;
         case COUNTER:
           int count = msg.arg1;
-          String suffix;
+          String remark;
           if (count > 10000) {
             if (count > 100000) {
-              suffix = "!!";
+              remark = "(ಠ益ಠ) " + count + "!!";
             } else {
-              suffix = "!";
+              remark = "└(°o°)┘ " + count + "!";
             }
           } else {
-            suffix = "";
+            remark = String.valueOf(count);
           }
-          datePicker.setText("Fetching records from DB...\n" + count + suffix);
+          datePicker.setText("Fetching records from DB...\n" + remark);
           break;
         default:
           throw new RuntimeException("unknown message type: " + msg.what);
