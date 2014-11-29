@@ -46,8 +46,6 @@ public class HistoryMapActivity extends FragmentActivity {
   private static final String START_DATE = "startDate";
   private static final String END_DATE = "endDate";
   private static final int MAX_ZOOM_LEVEL = 18;
-  private static final PolylineOptions LINE_OPTION =
-      new PolylineOptions().width(6).color(Color.argb(255, 0, 0, 255));
 
   // Map Panel
   private GoogleMap map;
@@ -400,8 +398,9 @@ public class HistoryMapActivity extends FragmentActivity {
   private void drawLines() {
     userNotifier.sendEmptyMessage(MessageType.START_DRAWING);
 
+    PolylineOptions lineOpt = new PolylineOptions().width(6).color(Color.argb(255, 0, 0, 255));
     for (Fix fix : fixes) {
-      LINE_OPTION.add(fix.getPosition());
+      lineOpt.add(fix.getPosition());
 
 //      //TODO(renlijie): dynamically change threshold and only draw in the current bound.
 //      // map.getProjection().getVisibleRegion().latLngBounds
@@ -414,7 +413,7 @@ public class HistoryMapActivity extends FragmentActivity {
 //        map.addCircle(circleOpt);
 //      }
     }
-    map.addPolyline(LINE_OPTION);
+    map.addPolyline(lineOpt);
 
     userNotifier.sendEmptyMessage(MessageType.FINISHED_DRAWING);
   }
