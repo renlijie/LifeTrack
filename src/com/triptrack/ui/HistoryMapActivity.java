@@ -2,11 +2,14 @@ package com.triptrack.ui;
 
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.graphics.Point;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.FragmentActivity;
+import android.view.Display;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
@@ -19,6 +22,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.clustering.ClusterManager;
 import com.squareup.timessquare.CalendarPickerView;
 import com.triptrack.DateRange;
@@ -67,23 +71,18 @@ public class HistoryMapActivity extends FragmentActivity {
   private ClusterManager<Fix> clusterManager;
   private GetDataCursorTask getDataCursorTask = null;
   private ReadDataTask readDataTask = null;
+  private ClusterTask clusterTask = null;
 
   private class UserNotifier extends Handler {
     @Override
     public void handleMessage(Message msg) {
       switch (msg.what) {
         case MessageType.STARTED_PROCESSING:
-          datePicker.setVisibility(View.VISIBLE);
-          datePicker.setText("Clustering...");
-          datePicker.clearAnimation();
-          datePicker.setVisibility(View.VISIBLE);
-          isProcessing = true;
+          ensureDatePickerShowing("Clustering...");
           break;
         case MessageType.FINISHED_PROCESSING:
-          datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
-              + "\n" + msg.arg1 + " markers + " + msg.arg2 + " clusters.");
-          isProcessing = false;
-          fadeOutButtons();
+          fadeOutDatePicker(CalendarUtils.dateRangeToString(dateRange) + "\n"
+              + msg.arg1 + " markers + " + msg.arg2 + " clusters.");
           break;
         case MessageType.UPDATE_COUNTER:
           int count = msg.arg1;
@@ -100,10 +99,17 @@ public class HistoryMapActivity extends FragmentActivity {
           datePicker.setText("Fetching records from DB...\n" + remark);
           break;
         case MessageType.INIT_ALGORITHM:
-          datePicker.setText("Feeding data to algorithm...");
+          ensureDatePickerShowing("Feeding data to algorithm...");
+          break;
+        case MessageType.START_DRAWING:
+          ensureDatePickerShowing("Drawing...");
+          break;
+        case MessageType.FINISHED_DRAWING:
+          fadeOutDatePicker(CalendarUtils.dateRangeToString(dateRange) + "\n"
+              + fixes.size() + " fixes.");
           break;
         case MessageType.ERROR:
-          datePicker.setText("Internal error:\n" + msg.obj);
+          ensureDatePickerShowing("Internal error:\n" + msg.obj);
           break;
         default:
           throw new RuntimeException("unknown message type: " + msg.what);
@@ -112,6 +118,12 @@ public class HistoryMapActivity extends FragmentActivity {
   }
 
   private class GetDataCursorTask extends AsyncTask<Void, Void, AsyncTaskResult<Cursor>> {
+    private boolean drawMarkers;
+
+    GetDataCursorTask(boolean drawMarkers) {
+      this.drawMarkers = drawMarkers;
+    }
+
     @Override
     protected void onPreExecute () {
       map.clear();
@@ -122,7 +134,6 @@ public class HistoryMapActivity extends FragmentActivity {
     protected AsyncTaskResult<Cursor> doInBackground(Void[] params) {
       Cursor cursor = null;
       try {
-        clusterManager.clearItems();
         cursor = geoFixDataStore.getGeoFixesByDateRange(dateRange);
         fixes = new ArrayList<>(cursor.getCount());
         return new AsyncTaskResult(cursor);
@@ -152,20 +163,24 @@ public class HistoryMapActivity extends FragmentActivity {
             HistoryMapActivity.this,
             "no location during this period of time",
             Toast.LENGTH_SHORT).show();
-        datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
-            + "\n0 markers + 0 clusters.");
-        isProcessing = false;
+        fadeOutDatePicker(CalendarUtils.dateRangeToString(dateRange) + "\n0 fix.");
       } else {
         if (readDataTask != null) {
           readDataTask.cancel(true);
         }
-        readDataTask = new ReadDataTask();
+        readDataTask = new ReadDataTask(drawMarkers);
         readDataTask.execute(cursor);
       }
     }
   }
 
   private class ReadDataTask extends AsyncTask<Cursor, Integer, AsyncTaskResult<LatLngBounds>> {
+    private boolean drawMarkers;
+
+    ReadDataTask(boolean drawMarkers) {
+      this.drawMarkers = drawMarkers;
+    }
+
     @Override
     //TODO(renlijie): cancel when changing date range.
     protected AsyncTaskResult<LatLngBounds> doInBackground(Cursor... params) {
@@ -186,8 +201,6 @@ public class HistoryMapActivity extends FragmentActivity {
             break;
           }
         }
-        userNotifier.sendMessage(userNotifier.obtainMessage(MessageType.INIT_ALGORITHM, 0, 0));
-        clusterManager.addItems(fixes);
         return new AsyncTaskResult(boundsBuilder.build());
       } catch (Throwable e) {
         return new AsyncTaskResult(e);
@@ -214,9 +227,46 @@ public class HistoryMapActivity extends FragmentActivity {
       if (isCancelled()) {
         return;
       }
-      map.moveCamera(CameraUpdateFactory.newLatLngBounds(result.getResult(), 100));
+
+      Display display = getWindowManager().getDefaultDisplay();
+      Point displaySize = new Point();
+      display.getSize(displaySize);
+      map.moveCamera(CameraUpdateFactory.newLatLngBounds(
+          result.getResult(), displaySize.x, displaySize.y, 100));
       if (map.getCameraPosition().zoom > MAX_ZOOM_LEVEL) {
         map.moveCamera(CameraUpdateFactory.zoomTo(MAX_ZOOM_LEVEL));
+      }
+
+      if (drawMarkers) {
+        cluster();
+      } else {
+        drawLines();
+      }
+    }
+  }
+
+  private class ClusterTask extends AsyncTask<Void, Void, AsyncTaskResult<Void>> {
+    @Override
+    protected AsyncTaskResult<Void> doInBackground(Void... params) {
+      try {
+        userNotifier.sendMessage(userNotifier.obtainMessage(MessageType.INIT_ALGORITHM, 0, 0));
+        clusterManager.clearItems();
+        clusterManager.addItems(fixes);
+        return new AsyncTaskResult(null);
+      } catch (Throwable e) {
+        return new AsyncTaskResult(e);
+      }
+    }
+
+    @Override
+    protected void onPostExecute(AsyncTaskResult<Void> result) {
+      if (result.getError() != null) {
+        userNotifier.sendMessage(userNotifier.obtainMessage(
+            MessageType.ERROR, result.getError().getMessage()));
+        return;
+      }
+      if (isCancelled()) {
+        return;
       }
       clusterManager.cluster();
     }
@@ -249,7 +299,6 @@ public class HistoryMapActivity extends FragmentActivity {
 
     userNotifier = new UserNotifier();
     clusterManager = new ClusterManager<>(this, map, userNotifier);
-    map.setOnCameraChangeListener(clusterManager);
 
     geoFixDataStore = new GeoFixDataStore(this);
     geoFixDataStore.open();
@@ -338,7 +387,31 @@ public class HistoryMapActivity extends FragmentActivity {
   }
 
   public void toggleMarkers(View v) {
-    // updateDrawing(markersButton.isChecked());
+    if(markersButton.isChecked()) {
+      map.setOnCameraChangeListener(clusterManager);
+      cluster();
+    } else {
+      map.setOnCameraChangeListener(null);
+      drawLines();
+    }
+  }
+
+  private void drawLines() {
+    userNotifier.sendEmptyMessage(MessageType.START_DRAWING);
+
+    PolylineOptions lineOpt = new PolylineOptions().width(4).color(Color.argb(128, 0, 0, 255));
+    for (Fix fix : fixes) {
+      lineOpt.add(fix.getPosition());
+//      CircleOptions circleOpt = new CircleOptions()
+//          .center(fix.getPosition())
+//          .radius(fix.getAcc())
+//          .strokeWidth(2);
+         // .strokeColor(Color.argb(128, 255 - fix.getFreshness(), fix.getFreshness(), 0));
+//      map.addCircle(circleOpt);
+    }
+    map.addPolyline(lineOpt);
+
+    userNotifier.sendEmptyMessage(MessageType.FINISHED_DRAWING);
   }
 
   public void showSettings(View v) {
@@ -448,14 +521,33 @@ public class HistoryMapActivity extends FragmentActivity {
   }
 
   private void draw(boolean drawMarkers) {
-    datePicker.setText("Fetching records from DB...");
-    isProcessing = true;
-    fadeOutButtons();
+    ensureDatePickerShowing("Fetching records from DB...");
 
     if (getDataCursorTask != null) {
       getDataCursorTask.cancel(true);
     }
-    getDataCursorTask = new GetDataCursorTask();
+    getDataCursorTask = new GetDataCursorTask(drawMarkers);
     getDataCursorTask.execute();
+  }
+
+  private void cluster() {
+    if (clusterTask != null) {
+      clusterTask.cancel(true);
+    }
+    clusterTask = new ClusterTask();
+    clusterTask.execute();
+  }
+
+  private void fadeOutDatePicker(String text) {
+    datePicker.setText(text);
+    isProcessing = false;
+    fadeOutButtons();
+  }
+
+  private void ensureDatePickerShowing(String text) {
+    isProcessing = true;
+    datePicker.setText(text);
+    datePicker.clearAnimation();
+    datePicker.setVisibility(View.VISIBLE);
   }
 }

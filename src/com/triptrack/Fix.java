@@ -7,7 +7,7 @@ import com.google.maps.android.clustering.ClusterItem;
 import com.triptrack.util.Constants;
 import com.triptrack.util.Cursors;
 
-public class Fix extends ClusterItem {
+public class Fix implements ClusterItem {
   private LatLng latLng;
   private long utc;
   private float acc;
