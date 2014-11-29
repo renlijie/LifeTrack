@@ -43,20 +43,6 @@ public class FixVisualizer {
     map.setOnCameraChangeListener(clusterManager);
   }
 
-//  private class UserNotifier extends Handler {
-//    @Override
-//    public void handleMessage(Message msg) {
-//      if (msg.what == ClusterManager.STARTED_PROCESSING) {
-//        datePicker.setVisibility(View.VISIBLE);
-//        datePicker.setText("Processing...");
-//      } else if (msg.what == ClusterManager.FINISHED_PROCESSING) {
-//        datePicker.setText(CalendarUtils.dateRangeToString(dateRange)
-//            + "\n" + fixes.size() + " out of " + fixes.size());
-//        mapActivity.fadeOutButtons();
-//      }
-//    }
-//  }
-
   public void draw(GeoFixDataStore dataStore, DateRange dateRange, boolean drawMarkers) {
     this.dateRange = dateRange;
 

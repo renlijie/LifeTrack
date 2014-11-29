@@ -335,10 +335,6 @@ public final class ControlPanelActivity extends Activity {
         .show();
   }
 
-  public void finishActivity(View v) {
-    finish();
-  }
-
   public void showInfo(View v) {
     new AlertDialog.Builder(this)
         .setMessage(Constants.ABOUT)

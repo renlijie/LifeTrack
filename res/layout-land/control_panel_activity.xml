@@ -61,13 +61,6 @@
                     android:textSize="14dp"
                     android:text="@string/set_interval" />
 
-                <Button
-                    android:id="@+id/show_history"
-                    android:layout_width="160dp"
-                    android:layout_height="60dp"
-                    android:onClick="finishActivity"
-                    android:textSize="14dp"
-                    android:text="@string/show_history" />
             </LinearLayout>
 
             <LinearLayout

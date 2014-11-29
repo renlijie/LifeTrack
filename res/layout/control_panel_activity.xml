@@ -46,15 +46,6 @@
             android:text="@string/set_interval" />
 
         <Button
-            android:id="@+id/show_history"
-            android:layout_width="160dp"
-            android:layout_height="60dp"
-            android:layout_marginBottom="15dp"
-            android:onClick="finishActivity"
-            android:textSize="14dp"
-            android:text="@string/show_history" />
-
-        <Button
             android:id="@+id/import_history"
             android:layout_width="200dp"
             android:layout_height="wrap_content"

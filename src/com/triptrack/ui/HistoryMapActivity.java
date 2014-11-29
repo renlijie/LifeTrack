@@ -18,6 +18,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.maps.android.clustering.ClusterManager;
 import com.squareup.timessquare.CalendarPickerView;
 import com.triptrack.DateRange;
@@ -26,7 +27,6 @@ import com.triptrack.datastore.GeoFixDataStore;
 import com.triptrack.support.AsyncTaskResult;
 import com.triptrack.support.MessageType;
 import com.triptrack.util.CalendarUtils;
-import com.triptrack.util.Cursors;
 import com.triptrack_beta.R;
 
 import java.util.ArrayList;
@@ -41,6 +41,7 @@ public class HistoryMapActivity extends FragmentActivity {
   private static final String TAG = "HistoryMapActivity";
   private static final String START_DATE = "startDate";
   private static final String END_DATE = "endDate";
+  private static final int MAX_ZOOM_LEVEL = 18;
 
   // Map Panel
   private GoogleMap map;
@@ -145,7 +146,8 @@ public class HistoryMapActivity extends FragmentActivity {
       }
       Cursor cursor = result.getResult();
       if (!cursor.moveToFirst()) {
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(0, 0), 3));
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(
+            new LatLng(35.662691, 139.731127), 12)); // Roppongi!
         Toast.makeText(
             HistoryMapActivity.this,
             "no location during this period of time",
@@ -154,8 +156,6 @@ public class HistoryMapActivity extends FragmentActivity {
             + "\n0 markers + 0 clusters.");
         isProcessing = false;
       } else {
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(
-            new LatLng(Cursors.getLat(cursor), Cursors.getLng(cursor)), 5));
         if (readDataTask != null) {
           readDataTask.cancel(true);
         }
@@ -165,16 +165,19 @@ public class HistoryMapActivity extends FragmentActivity {
     }
   }
 
-  private class ReadDataTask extends AsyncTask<Cursor, Integer, AsyncTaskResult<Void>> {
+  private class ReadDataTask extends AsyncTask<Cursor, Integer, AsyncTaskResult<LatLngBounds>> {
     @Override
     //TODO(renlijie): cancel when changing date range.
-    protected AsyncTaskResult<Void> doInBackground(Cursor... params) {
+    protected AsyncTaskResult<LatLngBounds> doInBackground(Cursor... params) {
       Cursor cursor = null;
+      LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
       try {
         int count = 0;
         cursor = params[0];
         while (true) {
-          fixes.add(Fix.fromCursor(cursor));
+          Fix fix = Fix.fromCursor(cursor);
+          fixes.add(fix);
+          boundsBuilder.include(fix.getPosition());
           count += 1;
           if (count % 1000 == 0) {
             publishProgress(count);
@@ -185,7 +188,7 @@ public class HistoryMapActivity extends FragmentActivity {
         }
         userNotifier.sendMessage(userNotifier.obtainMessage(MessageType.INIT_ALGORITHM, 0, 0));
         clusterManager.addItems(fixes);
-        return new AsyncTaskResult(null);
+        return new AsyncTaskResult(boundsBuilder.build());
       } catch (Throwable e) {
         return new AsyncTaskResult(e);
       } finally {
@@ -202,7 +205,7 @@ public class HistoryMapActivity extends FragmentActivity {
     }
 
     @Override
-    protected void onPostExecute(AsyncTaskResult<Void> result) {
+    protected void onPostExecute(AsyncTaskResult<LatLngBounds> result) {
       if (result.getError() != null) {
         userNotifier.sendMessage(userNotifier.obtainMessage(
             MessageType.ERROR, result.getError().getMessage()));
@@ -210,6 +213,10 @@ public class HistoryMapActivity extends FragmentActivity {
       }
       if (isCancelled()) {
         return;
+      }
+      map.moveCamera(CameraUpdateFactory.newLatLngBounds(result.getResult(), 100));
+      if (map.getCameraPosition().zoom > MAX_ZOOM_LEVEL) {
+        map.moveCamera(CameraUpdateFactory.zoomTo(MAX_ZOOM_LEVEL));
       }
       clusterManager.cluster();
     }
@@ -311,10 +318,7 @@ public class HistoryMapActivity extends FragmentActivity {
     if (resetToPreviousDay()) {
       draw(markersButton.isChecked());
     } else {
-      Toast.makeText(
-          this,
-          "No earlier fixe was recorded.",
-          Toast.LENGTH_SHORT).show();
+      Toast.makeText(this, "No earlier fix was recorded.", Toast.LENGTH_SHORT).show();
     }
   }
 
@@ -322,10 +326,7 @@ public class HistoryMapActivity extends FragmentActivity {
     if (resetToNextDay()) {
       draw(markersButton.isChecked());
     } else {
-      Toast.makeText(
-          this,
-          "No later fixe was recorded.",
-          Toast.LENGTH_SHORT).show();
+      Toast.makeText(this, "No later fix was recorded.", Toast.LENGTH_SHORT).show();
     }
   }
 
