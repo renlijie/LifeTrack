@@ -237,10 +237,9 @@ public class HistoryMapActivity extends FragmentActivity {
         map.moveCamera(CameraUpdateFactory.zoomTo(MAX_ZOOM_LEVEL));
       }
 
+      drawLines();
       if (drawMarkers) {
         cluster();
-      } else {
-        drawLines();
       }
     }
   }
@@ -399,15 +398,20 @@ public class HistoryMapActivity extends FragmentActivity {
   private void drawLines() {
     userNotifier.sendEmptyMessage(MessageType.START_DRAWING);
 
-    PolylineOptions lineOpt = new PolylineOptions().width(4).color(Color.argb(128, 0, 0, 255));
+    PolylineOptions lineOpt = new PolylineOptions().width(6).color(Color.argb(255, 0, 0, 255));
     for (Fix fix : fixes) {
       lineOpt.add(fix.getPosition());
-//      CircleOptions circleOpt = new CircleOptions()
-//          .center(fix.getPosition())
-//          .radius(fix.getAcc())
-//          .strokeWidth(2);
-         // .strokeColor(Color.argb(128, 255 - fix.getFreshness(), fix.getFreshness(), 0));
-//      map.addCircle(circleOpt);
+
+//      //TODO(renlijie): dynamically change threshold and only draw in the current bound.
+//      // map.getProjection().getVisibleRegion().latLngBounds
+//      if (fix.getAcc() > 50) {
+//        CircleOptions circleOpt = new CircleOptions()
+//            .center(fix.getPosition())
+//            .radius(fix.getAcc())
+//            .strokeWidth(0)
+//            .fillColor(Color.argb(2, 255, 0, 0));
+//        map.addCircle(circleOpt);
+//      }
     }
     map.addPolyline(lineOpt);
 
